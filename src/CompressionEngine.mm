@@ -76,7 +76,9 @@ public:
                 if (source) {
                     NSLog(@"Successfully loaded shader source from %@, compiling...", sourcePath);
                     MTLCompileOptions* options = [[MTLCompileOptions alloc] init];
-                    options.languageVersion = MTLLanguageVersion2_4;
+                    if (@available(macOS 12.0, *)) {
+                        options.languageVersion = MTLLanguageVersion2_4;
+                    }
                     library = [device newLibraryWithSource:source 
                                                  options:options 
                                                    error:&error];

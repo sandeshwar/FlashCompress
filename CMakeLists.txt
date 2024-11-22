@@ -1,9 +1,10 @@
 cmake_minimum_required(VERSION 3.10)
-project(GPUZip)
+project(GPUZip CXX OBJCXX)
 
-# Set C++ standard
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_OBJCXX_STANDARD 17)
+set(CMAKE_OBJCXX_STANDARD_REQUIRED ON)
 
 # Add Homebrew's include and lib directories
 include_directories(/opt/homebrew/include)
@@ -31,6 +32,7 @@ add_executable(gpuzip
 target_link_libraries(gpuzip
     "-framework Metal"
     "-framework Foundation"
+    "-framework Metal" # Added Metal framework linkage
 )
 
 add_dependencies(gpuzip shaders)
