@@ -1,4 +1,4 @@
-# GPUZip - High Performance GPU-based Compression
+# FlashCompress - High Performance GPU-based Compression
 
 A cutting-edge lossless compression program that utilizes GPU acceleration through Metal framework to achieve superior compression speeds on macOS platforms.
 
@@ -17,19 +17,19 @@ A cutting-edge lossless compression program that utilizes GPU acceleration throu
 ## Building
 ```bash
 # Open the project in Xcode
-open GPUZip.xcodeproj
+open FlashCompress.xcodeproj
 
 # Build using xcodebuild
-xcodebuild -project GPUZip.xcodeproj -scheme gpuzip -configuration Release
+xcodebuild -project FlashCompress.xcodeproj -scheme flashcompress -configuration Release
 ```
 
 ## Usage
 ```bash
 # Compression
-./gpuzip compress input_file output_file
+./flashcompress compress input_file output_file
 
 # Decompression
-./gpuzip decompress input_file output_file
+./flashcompress decompress input_file output_file
 ```
 
 ## Algorithm

@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(GPUZip CXX OBJCXX)
+project(FlashCompress CXX OBJCXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -30,19 +30,19 @@ add_custom_command(
 add_custom_target(shaders DEPENDS ${CMAKE_BINARY_DIR}/default.metallib)
 
 # Main executable
-add_executable(gpuzip
+add_executable(flashcompress
     src/main.mm
     src/CompressionEngine.mm
 )
 
 # Link Metal framework and other dependencies
-target_link_libraries(gpuzip PRIVATE
+target_link_libraries(flashcompress PRIVATE
     "-framework Metal"
     "-framework Foundation"
     "-framework QuartzCore"
 )
 
-add_dependencies(gpuzip shaders)
+add_dependencies(flashcompress shaders)
 
 # Enable testing
 enable_testing()
