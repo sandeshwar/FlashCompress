@@ -1,0 +1,222 @@
+// !$*UTF8*$!
+{
+    archiveVersion = 1;
+    classes = {
+    };
+    objectVersion = 50;
+    objects = {
+        /* Begin PBXBuildFile section */
+        1234567890ABCDEF0123456 /* main.mm in Sources */ = {
+            isa = PBXBuildFile;
+            fileRef = 1234567890ABCDEF0123457;
+        };
+        1234567890ABCDEF0123458 /* CompressionEngine.mm in Sources */ = {
+            isa = PBXBuildFile;
+            fileRef = 1234567890ABCDEF0123459;
+        };
+        1234567890ABCDEF012345A /* Shaders.metal in Sources */ = {
+            isa = PBXBuildFile;
+            fileRef = 1234567890ABCDEF012345B;
+        };
+        /* End PBXBuildFile section */
+        
+        /* Begin PBXFileReference section */
+        1234567890ABCDEF0123457 /* main.mm */ = {
+            isa = PBXFileReference;
+            path = main.mm;
+            sourceTree = "<group>";
+        };
+        1234567890ABCDEF0123459 /* CompressionEngine.mm */ = {
+            isa = PBXFileReference;
+            path = CompressionEngine.mm;
+            sourceTree = "<group>";
+        };
+        1234567890ABCDEF012345B /* Shaders.metal */ = {
+            isa = PBXFileReference;
+            path = Shaders.metal;
+            sourceTree = "<group>";
+        };
+        1234567890ABCDEF012345D /* gpuzip */ = {
+            isa = PBXFileReference;
+            explicitFileType = "compiled.mach-o.executable";
+            includeInIndex = 0;
+            path = gpuzip;
+            sourceTree = BUILT_PRODUCTS_DIR;
+        };
+        /* End PBXFileReference section */
+        
+        /* Begin PBXFrameworksBuildPhase section */
+        1234567890ABCDEF012345E /* Frameworks */ = {
+            isa = PBXFrameworksBuildPhase;
+            buildActionMask = 2147483647;
+            files = (
+            );
+            runOnlyForDeploymentPostprocessing = 0;
+        };
+        /* End PBXFrameworksBuildPhase section */
+        
+        /* Begin PBXGroup section */
+        1234567890ABCDEF012345F /* Products */ = {
+            isa = PBXGroup;
+            children = (
+                1234567890ABCDEF012345D,
+            );
+            name = Products;
+            sourceTree = "<group>";
+        };
+        1234567890ABCDEF0123460 /* Source */ = {
+            isa = PBXGroup;
+            children = (
+                1234567890ABCDEF0123457,
+                1234567890ABCDEF0123459,
+                1234567890ABCDEF012345B,
+            );
+            path = src;
+            sourceTree = "<group>";
+        };
+        1234567890ABCDEF0123461 = {
+            isa = PBXGroup;
+            children = (
+                1234567890ABCDEF0123460,
+                1234567890ABCDEF012345F,
+            );
+            sourceTree = "<group>";
+        };
+        /* End PBXGroup section */
+        
+        /* Begin PBXNativeTarget section */
+        1234567890ABCDEF0123462 /* gpuzip */ = {
+            isa = PBXNativeTarget;
+            buildConfigurationList = 1234567890ABCDEF0123463;
+            buildPhases = (
+                1234567890ABCDEF0123464 /* Sources */,
+                1234567890ABCDEF012345E /* Frameworks */,
+            );
+            buildRules = (
+            );
+            dependencies = (
+            );
+            name = gpuzip;
+            productName = gpuzip;
+            productReference = 1234567890ABCDEF012345D;
+            productType = "com.apple.product-type.tool";
+        };
+        /* End PBXNativeTarget section */
+        
+        /* Begin PBXProject section */
+        1234567890ABCDEF0123465 /* Project object */ = {
+            isa = PBXProject;
+            attributes = {
+                LastUpgradeCheck = 1200;
+                ORGANIZATIONNAME = "GPUZip";
+                TargetAttributes = {
+                    1234567890ABCDEF0123462 = {
+                        CreatedOnToolsVersion = 12.0;
+                    };
+                };
+            };
+            buildConfigurationList = 1234567890ABCDEF0123466;
+            compatibilityVersion = "Xcode 9.3";
+            developmentRegion = en;
+            hasScannedForEncodings = 0;
+            knownRegions = (
+                en,
+                Base,
+            );
+            mainGroup = 1234567890ABCDEF0123461;
+            productRefGroup = 1234567890ABCDEF012345F;
+            projectDirPath = "";
+            projectRoot = "";
+            targets = (
+                1234567890ABCDEF0123462,
+            );
+        };
+        /* End PBXProject section */
+        
+        /* Begin PBXSourcesBuildPhase section */
+        1234567890ABCDEF0123464 /* Sources */ = {
+            isa = PBXSourcesBuildPhase;
+            buildActionMask = 2147483647;
+            files = (
+                1234567890ABCDEF0123456,
+                1234567890ABCDEF0123458,
+                1234567890ABCDEF012345A,
+            );
+            runOnlyForDeploymentPostprocessing = 0;
+        };
+        /* End PBXSourcesBuildPhase section */
+        
+        /* Begin XCBuildConfiguration section */
+        1234567890ABCDEF0123467 /* Debug */ = {
+            isa = XCBuildConfiguration;
+            buildSettings = {
+                ALWAYS_SEARCH_USER_PATHS = NO;
+                CLANG_ANALYZER_NONNULL = YES;
+                CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+                CLANG_ENABLE_MODULES = YES;
+                CLANG_ENABLE_OBJC_ARC = YES;
+                DEBUG_INFORMATION_FORMAT = dwarf;
+                GCC_OPTIMIZATION_LEVEL = 0;
+                MACOSX_DEPLOYMENT_TARGET = 10.15;
+                MTL_ENABLE_DEBUG_INFO = YES;
+                ONLY_ACTIVE_ARCH = YES;
+                SDKROOT = macosx;
+            };
+            name = Debug;
+        };
+        1234567890ABCDEF0123468 /* Release */ = {
+            isa = XCBuildConfiguration;
+            buildSettings = {
+                ALWAYS_SEARCH_USER_PATHS = NO;
+                CLANG_ANALYZER_NONNULL = YES;
+                CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
+                CLANG_ENABLE_MODULES = YES;
+                CLANG_ENABLE_OBJC_ARC = YES;
+                DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+                MACOSX_DEPLOYMENT_TARGET = 10.15;
+                MTL_ENABLE_DEBUG_INFO = NO;
+                SDKROOT = macosx;
+            };
+            name = Release;
+        };
+        1234567890ABCDEF0123469 /* Debug */ = {
+            isa = XCBuildConfiguration;
+            buildSettings = {
+                CODE_SIGN_STYLE = Automatic;
+                PRODUCT_NAME = "$(TARGET_NAME)";
+            };
+            name = Debug;
+        };
+        1234567890ABCDEF012346A /* Release */ = {
+            isa = XCBuildConfiguration;
+            buildSettings = {
+                CODE_SIGN_STYLE = Automatic;
+                PRODUCT_NAME = "$(TARGET_NAME)";
+            };
+            name = Release;
+        };
+        /* End XCBuildConfiguration section */
+        
+        /* Begin XCConfigurationList section */
+        1234567890ABCDEF0123463 = {
+            isa = XCConfigurationList;
+            buildConfigurations = (
+                1234567890ABCDEF0123469,
+                1234567890ABCDEF012346A,
+            );
+            defaultConfigurationIsVisible = 0;
+            defaultConfigurationName = Release;
+        };
+        1234567890ABCDEF0123466 = {
+            isa = XCConfigurationList;
+            buildConfigurations = (
+                1234567890ABCDEF0123467,
+                1234567890ABCDEF0123468,
+            );
+            defaultConfigurationIsVisible = 0;
+            defaultConfigurationName = Release;
+        };
+        /* End XCConfigurationList section */
+    };
+    rootObject = 1234567890ABCDEF0123465;
+}
