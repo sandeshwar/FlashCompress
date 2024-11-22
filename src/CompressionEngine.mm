@@ -13,78 +13,37 @@ CompressionEngine::CompressionEngine() {
         throw std::runtime_error("Failed to create Metal device");
     }
     
-    [device retain];
-    
-    // Create command queue
     commandQueue = [device newCommandQueue];
     if (!commandQueue) {
-        [device release];
         throw std::runtime_error("Failed to create command queue");
     }
     
-    [commandQueue retain];
-    
-    // Load default library
     NSError* error = nil;
     library = [device newDefaultLibrary];
     if (!library) {
-        [commandQueue release];
-        [device release];
         throw std::runtime_error("Failed to create default library");
     }
     
-    [library retain];
-    
-    // Get function references
     compressFunction = [library newFunctionWithName:@"compress"];
     decompressFunction = [library newFunctionWithName:@"decompress"];
     if (!compressFunction || !decompressFunction) {
-        [library release];
-        [commandQueue release];
-        [device release];
         throw std::runtime_error("Failed to load Metal functions");
     }
     
-    [compressFunction retain];
-    [decompressFunction retain];
-    
-    // Create pipeline states
     error = nil;
     compressPipeline = [device newComputePipelineStateWithFunction:compressFunction error:&error];
     if (!compressPipeline) {
-        [decompressFunction release];
-        [compressFunction release];
-        [library release];
-        [commandQueue release];
-        [device release];
         throw std::runtime_error("Failed to create compress pipeline state");
     }
-    
-    [compressPipeline retain];
     
     error = nil;
     decompressPipeline = [device newComputePipelineStateWithFunction:decompressFunction error:&error];
     if (!decompressPipeline) {
-        [compressPipeline release];
-        [decompressFunction release];
-        [compressFunction release];
-        [library release];
-        [commandQueue release];
-        [device release];
         throw std::runtime_error("Failed to create decompress pipeline state");
     }
-    
-    [decompressPipeline retain];
 }
 
 CompressionEngine::~CompressionEngine() {
-    if (decompressPipeline) [decompressPipeline release];
-    if (compressPipeline) [compressPipeline release];
-    if (decompressFunction) [decompressFunction release];
-    if (compressFunction) [compressFunction release];
-    if (library) [library release];
-    if (commandQueue) [commandQueue release];
-    if (device) [device release];
 }
 
 std::vector<uint8_t> CompressionEngine::compress(const std::vector<uint8_t>& input) {
