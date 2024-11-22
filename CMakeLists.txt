@@ -33,6 +33,12 @@ target_link_libraries(compression_tests
     "-framework Foundation"
 )
 
+# Set RPATH for the test executable
+set_target_properties(compression_tests PROPERTIES
+    BUILD_WITH_INSTALL_RPATH TRUE
+    INSTALL_RPATH "$ORIGIN"
+)
+
 # Enable testing
 enable_testing()
 add_test(NAME compression_tests COMMAND compression_tests)
