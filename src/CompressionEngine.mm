@@ -8,38 +8,79 @@
 static constexpr size_t THREAD_GROUP_SIZE = 256;
 
 CompressionEngine::CompressionEngine() {
-    device = MTLCreateSystemDefaultDevice();
-    if (!device) {
-        throw std::runtime_error("Failed to create Metal device");
-    }
-    
-    commandQueue = [device newCommandQueue];
-    if (!commandQueue) {
-        throw std::runtime_error("Failed to create command queue");
-    }
-    
-    NSError* error = nil;
-    library = [device newDefaultLibrary];
-    if (!library) {
-        throw std::runtime_error("Failed to create default library");
-    }
-    
-    compressFunction = [library newFunctionWithName:@"compress"];
-    decompressFunction = [library newFunctionWithName:@"decompress"];
-    if (!compressFunction || !decompressFunction) {
-        throw std::runtime_error("Failed to load Metal functions");
-    }
-    
-    error = nil;
-    compressPipeline = [device newComputePipelineStateWithFunction:compressFunction error:&error];
-    if (!compressPipeline) {
-        throw std::runtime_error("Failed to create compress pipeline state");
-    }
-    
-    error = nil;
-    decompressPipeline = [device newComputePipelineStateWithFunction:decompressFunction error:&error];
-    if (!decompressPipeline) {
-        throw std::runtime_error("Failed to create decompress pipeline state");
+    @autoreleasepool {
+        // Print Metal availability information
+        NSArray<id<MTLDevice>> *devices = MTLCopyAllDevices();
+        if (devices && [devices count] > 0) {
+            std::cout << "Available Metal devices:\n";
+            for (id<MTLDevice> dev in devices) {
+                std::cout << "  - " << [[dev name] UTF8String] << "\n";
+            }
+        } else {
+            std::cerr << "No Metal devices found in the system\n";
+        }
+
+        // Try to get the first available device if default device fails
+        device = MTLCreateSystemDefaultDevice();
+        if (!device && devices && [devices count] > 0) {
+            device = [devices firstObject];
+            std::cout << "Using first available device: " << [[device name] UTF8String] << "\n";
+        }
+        
+        if (!device) {
+            std::cerr << "Metal device creation failed. Please ensure Metal is supported on your system.\n";
+            throw std::runtime_error("Failed to create Metal device");
+        }
+        
+        std::cout << "Metal device created: " << [[device name] UTF8String] << "\n";
+        
+        commandQueue = [device newCommandQueue];
+        if (!commandQueue) {
+            throw std::runtime_error("Failed to create command queue");
+        }
+        
+        NSError* error = nil;
+        NSString* executablePath = [[NSBundle mainBundle] executablePath];
+        NSString* executableDir = [executablePath stringByDeletingLastPathComponent];
+        NSURL* libraryURL = [NSURL fileURLWithPath:[executableDir stringByAppendingPathComponent:@"default.metallib"]];
+        
+        std::cout << "Looking for Metal library at: " << [libraryURL.path UTF8String] << "\n";
+        
+        if ([[NSFileManager defaultManager] fileExistsAtPath:libraryURL.path]) {
+            std::cout << "Metal library file exists\n";
+            library = [device newLibraryWithURL:libraryURL error:&error];
+        } else {
+            std::cerr << "Metal library not found at path. Trying default library...\n";
+            library = [device newDefaultLibrary];
+        }
+        
+        if (!library) {
+            std::cerr << "Failed to load Metal library. Error: " << (error ? [[error localizedDescription] UTF8String] : "Unknown error") << "\n";
+            throw std::runtime_error("Failed to create Metal library");
+        }
+        
+        std::cout << "Metal library loaded successfully\n";
+        
+        compressFunction = [library newFunctionWithName:@"compress"];
+        decompressFunction = [library newFunctionWithName:@"decompress"];
+        if (!compressFunction || !decompressFunction) {
+            std::cerr << "Failed to load Metal functions. Please ensure the Metal shader code is correctly compiled.\n";
+            throw std::runtime_error("Failed to load Metal functions");
+        }
+        
+        error = nil;
+        compressPipeline = [device newComputePipelineStateWithFunction:compressFunction error:&error];
+        if (!compressPipeline) {
+            std::cerr << "Failed to create compress pipeline state. Error: " << (error ? [[error localizedDescription] UTF8String] : "Unknown error") << "\n";
+            throw std::runtime_error("Failed to create compress pipeline state");
+        }
+        
+        error = nil;
+        decompressPipeline = [device newComputePipelineStateWithFunction:decompressFunction error:&error];
+        if (!decompressPipeline) {
+            std::cerr << "Failed to create decompress pipeline state. Error: " << (error ? [[error localizedDescription] UTF8String] : "Unknown error") << "\n";
+            throw std::runtime_error("Failed to create decompress pipeline state");
+        }
     }
 }
 
