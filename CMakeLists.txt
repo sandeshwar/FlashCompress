@@ -6,9 +6,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_OBJCXX_STANDARD 17)
 set(CMAKE_OBJCXX_STANDARD_REQUIRED ON)
 
+# Enable testing
+enable_testing()
+
 # Add Homebrew's include and lib directories
 include_directories(/opt/homebrew/include)
 link_directories(/opt/homebrew/lib)
+
+# Set compiler flags for Objective-C++
+set(CMAKE_OBJCXX_FLAGS "${CMAKE_OBJCXX_FLAGS} -x objective-c++ -std=gnu++17")
 
 # Compile Metal shader to metallib
 add_custom_command(
@@ -32,7 +38,6 @@ add_executable(gpuzip
 target_link_libraries(gpuzip
     "-framework Metal"
     "-framework Foundation"
-    "-framework Metal" # Added Metal framework linkage
 )
 
 add_dependencies(gpuzip shaders)
@@ -52,13 +57,8 @@ target_link_libraries(compression_tests
     "-framework Foundation"
 )
 
-add_dependencies(compression_tests shaders)
-
-# Set RPATH for the test executable
-set_target_properties(compression_tests PROPERTIES
-    BUILD_WITH_INSTALL_RPATH TRUE
-    INSTALL_RPATH "$ORIGIN"
-)
+# Add test
+add_test(NAME compression_tests COMMAND compression_tests)
 
 # Metal test executable
 add_executable(metal_test
@@ -72,6 +72,8 @@ target_link_libraries(metal_test
 
 add_dependencies(metal_test shaders)
 
-# Enable testing
-enable_testing()
-add_test(NAME compression_tests COMMAND compression_tests)
+# Set RPATH for the test executable
+set_target_properties(compression_tests PROPERTIES
+    BUILD_WITH_INSTALL_RPATH TRUE
+    INSTALL_RPATH "$ORIGIN"
+)

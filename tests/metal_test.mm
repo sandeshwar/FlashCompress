@@ -1,34 +1,44 @@
 #import <Foundation/Foundation.h>
-#import <Metal/Metal.h>
-#include <iostream>
+#include "/opt/homebrew/include/gtest/gtest.h"
+#include <Metal/Metal.h>
 
-int main(int argc, const char * argv[]) {
-    @autoreleasepool {
-        // Get all available Metal devices
-        NSArray<id<MTLDevice>> *devices = MTLCopyAllDevices();
-        
-        if ([devices count] == 0) {
-            std::cout << "No Metal devices found on the system!" << std::endl;
-            return 1;
-        }
-        
-        std::cout << "Found " << [devices count] << " Metal device(s):" << std::endl;
-        
-        for (id<MTLDevice> device in devices) {
-            std::cout << "Device: " << [[device name] UTF8String] << std::endl;
-            std::cout << "  Unified Memory: " << (device.hasUnifiedMemory ? "Yes" : "No") << std::endl;
-            std::cout << "  Low Power: " << (device.isLowPower ? "Yes" : "No") << std::endl;
-            std::cout << "  Removable: " << (device.isRemovable ? "Yes" : "No") << std::endl;
-            std::cout << "  Max Buffer Length: " << device.maxBufferLength << std::endl;
-        }
-        
-        // Try to create default device
-        id<MTLDevice> defaultDevice = MTLCreateSystemDefaultDevice();
-        if (defaultDevice) {
-            std::cout << "\nDefault Metal device: " << [[defaultDevice name] UTF8String] << std::endl;
-        } else {
-            std::cout << "\nFailed to create default Metal device!" << std::endl;
-        }
+
+class MetalTest : public ::testing::Test {
+protected:
+    id<MTLDevice> device;
+    
+    void SetUp() override {
+        device = MTLCreateSystemDefaultDevice();
+        ASSERT_NE(device, nullptr) << "Failed to create Metal device";
+        [device retain];
     }
-    return 0;
+    
+    void TearDown() override {
+        [device release];
+    }
+};
+
+TEST_F(MetalTest, DeviceCapabilities) {
+    EXPECT_TRUE([device supportsFeatureSet:MTLFeatureSet_macOS_GPUFamily1_v1]);
+    EXPECT_GT([device maxThreadgroupMemoryLength], 0);
+    EXPECT_GT([device maxThreadsPerThreadgroup].width, 0);
 }
+
+TEST_F(MetalTest, CommandQueue) {
+    id<MTLCommandQueue> queue = [device newCommandQueue];
+    ASSERT_NE(queue, nullptr) << "Failed to create command queue";
+    [queue release];
+}
+
+TEST_F(MetalTest, Buffer) {
+    const size_t bufferSize = 1024;
+    id<MTLBuffer> buffer = [device newBufferWithLength:bufferSize options:MTLResourceStorageModeShared];
+    ASSERT_NE(buffer, nullptr) << "Failed to create buffer";
+    EXPECT_EQ([buffer length], bufferSize);
+    [buffer release];
+}
+
+// int main(int argc, char **argv) {
+//     testing::InitGoogleTest(&argc, argv);
+//     return RUN_ALL_TESTS();
+// }

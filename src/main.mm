@@ -2,7 +2,7 @@
 #include <fstream>
 #include <vector>
 #include <chrono>
-#include "CompressionEngine.mm"
+#include "CompressionEngine.h"
 
 void printUsage() {
     std::cout << "Usage: gpuzip [compress|decompress] input_file output_file\n";

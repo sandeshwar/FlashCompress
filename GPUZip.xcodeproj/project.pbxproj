@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 50;
+	objectVersion = 54;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -11,6 +11,10 @@
 		1234567890ABCDEF0123458 /* CompressionEngine.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1234567890ABCDEF0123459 /* CompressionEngine.mm */; };
 		1234567890ABCDEF012345A /* Shaders.metal in Sources */ = {isa = PBXBuildFile; fileRef = 1234567890ABCDEF012345B /* Shaders.metal */; };
 		7AAE89D52CF0F20000BFEF4C /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7AAE89D42CF0F20000BFEF4C /* Metal.framework */; };
+		8A1B2C3D4E5F6G7H8I9J0K1 /* compression_tests.mm in Sources */ = {isa = PBXBuildFile; fileRef = 8A1B2C3D4E5F6G7H8I9J0K2 /* compression_tests.mm */; };
+		8A1B2C3D4E5F6G7H8I9J0K3 /* metal_test.mm in Sources */ = {isa = PBXBuildFile; fileRef = 8A1B2C3D4E5F6G7H8I9J0K4 /* metal_test.mm */; };
+		8A1B2C3D4E5F6G7H8I9J0K6 /* Metal.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7AAE89D42CF0F20000BFEF4C /* Metal.framework */; };
+		8A1B2C3D4E5F6G7H8I9J0L2 /* CompressionEngine.mm in Sources */ = {isa = PBXBuildFile; fileRef = 1234567890ABCDEF0123459 /* CompressionEngine.mm */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -19,6 +23,10 @@
 		1234567890ABCDEF012345B /* Shaders.metal */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.metal; path = Shaders.metal; sourceTree = "<group>"; };
 		1234567890ABCDEF012345D /* gpuzip */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = gpuzip; sourceTree = BUILT_PRODUCTS_DIR; };
 		7AAE89D42CF0F20000BFEF4C /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
+		8A1B2C3D4E5F6G7H8I9J0K2 /* compression_tests.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = compression_tests.mm; path = tests/compression_tests.mm; sourceTree = "<group>"; };
+		8A1B2C3D4E5F6G7H8I9J0K4 /* metal_test.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = metal_test.mm; path = tests/metal_test.mm; sourceTree = "<group>"; };
+		8A1B2C3D4E5F6G7H8I9J0K7 /* GPUZipTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = GPUZipTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		8A1B2C3D4E5F6G7H8I9J0L1 /* CompressionEngine.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = CompressionEngine.h; path = src/CompressionEngine.h; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -30,6 +38,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		8A1B2C3D4E5F6G7H8I9J0K8 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8A1B2C3D4E5F6G7H8I9J0K6 /* Metal.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -37,6 +53,7 @@
 			isa = PBXGroup;
 			children = (
 				1234567890ABCDEF012345D /* gpuzip */,
+				8A1B2C3D4E5F6G7H8I9J0K7 /* GPUZipTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -46,6 +63,7 @@
 			children = (
 				1234567890ABCDEF0123457 /* main.mm */,
 				1234567890ABCDEF0123459 /* CompressionEngine.mm */,
+				8A1B2C3D4E5F6G7H8I9J0L1 /* CompressionEngine.h */,
 				1234567890ABCDEF012345B /* Shaders.metal */,
 			);
 			path = src;
@@ -57,6 +75,7 @@
 				1234567890ABCDEF0123460 /* src */,
 				7AAE89D32CF0F20000BFEF4C /* Frameworks */,
 				1234567890ABCDEF012345F /* Products */,
+				8A1B2C3D4E5F6G7H8I9J0K9 /* Tests */,
 			);
 			sourceTree = "<group>";
 		};
@@ -66,6 +85,15 @@
 				7AAE89D42CF0F20000BFEF4C /* Metal.framework */,
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		8A1B2C3D4E5F6G7H8I9J0K9 /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				8A1B2C3D4E5F6G7H8I9J0K2 /* compression_tests.mm */,
+				8A1B2C3D4E5F6G7H8I9J0K4 /* metal_test.mm */,
+			);
+			name = Tests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -87,17 +115,37 @@
 			productReference = 1234567890ABCDEF012345D /* gpuzip */;
 			productType = "com.apple.product-type.tool";
 		};
+		8A1B2C3D4E5F6G7H8I9J0KA /* GPUZipTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 8A1B2C3D4E5F6G7H8I9J0KB /* Build configuration list for PBXNativeTarget "GPUZipTests" */;
+			buildPhases = (
+				8A1B2C3D4E5F6G7H8I9J0KC /* Sources */,
+				8A1B2C3D4E5F6G7H8I9J0K8 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = GPUZipTests;
+			productName = GPUZipTests;
+			productReference = 8A1B2C3D4E5F6G7H8I9J0K7 /* GPUZipTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
 		1234567890ABCDEF0123465 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 1200;
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1610;
 				ORGANIZATIONNAME = GPUZip;
 				TargetAttributes = {
 					1234567890ABCDEF0123462 = {
 						CreatedOnToolsVersion = 12.0;
+					};
+					8A1B2C3D4E5F6G7H8I9J0KA = {
+						CreatedOnToolsVersion = 15.0;
 					};
 				};
 			};
@@ -115,6 +163,7 @@
 			projectRoot = "";
 			targets = (
 				1234567890ABCDEF0123462 /* gpuzip */,
+				8A1B2C3D4E5F6G7H8I9J0KA /* GPUZipTests */,
 			);
 		};
 /* End PBXProject section */
@@ -130,6 +179,16 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		8A1B2C3D4E5F6G7H8I9J0KC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8A1B2C3D4E5F6G7H8I9J0K1 /* compression_tests.mm in Sources */,
+				8A1B2C3D4E5F6G7H8I9J0K3 /* metal_test.mm in Sources */,
+				8A1B2C3D4E5F6G7H8I9J0L2 /* CompressionEngine.mm in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
@@ -141,9 +200,38 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
-				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
@@ -158,8 +246,36 @@
 				CLANG_CXX_LANGUAGE_STANDARD = "gnu++17";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				MACOSX_DEPLOYMENT_TARGET = 10.15;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				SDKROOT = macosx;
 			};
@@ -169,6 +285,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
+				DEAD_CODE_STRIPPING = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Debug;
@@ -177,6 +295,80 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
+				DEAD_CODE_STRIPPING = YES;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+		8A1B2C3D4E5F6G7H8I9J0KD /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = NO;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SYSTEM_LIBRARY_DIR)/Frameworks",
+					/opt/homebrew/lib,
+				);
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					/opt/homebrew/include,
+				);
+				INFOPLIST_FILE = "$(SRCROOT)/tests/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+					/opt/homebrew/lib,
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/opt/homebrew/lib,
+				);
+				OTHER_LDFLAGS = (
+					"-lgtest",
+					"-lgtest_main",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.GPUZipTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		8A1B2C3D4E5F6G7H8I9J0KE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = NO;
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(SYSTEM_LIBRARY_DIR)/Frameworks",
+					/opt/homebrew/lib,
+				);
+				HEADER_SEARCH_PATHS = (
+					"$(inherited)",
+					/opt/homebrew/include,
+				);
+				INFOPLIST_FILE = "$(SRCROOT)/tests/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@loader_path/../Frameworks",
+					/opt/homebrew/lib,
+				);
+				LIBRARY_SEARCH_PATHS = (
+					"$(inherited)",
+					/opt/homebrew/lib,
+				);
+				OTHER_LDFLAGS = (
+					"-lgtest",
+					"-lgtest_main",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = com.example.GPUZipTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 			};
 			name = Release;
@@ -198,6 +390,15 @@
 			buildConfigurations = (
 				1234567890ABCDEF0123467 /* Debug */,
 				1234567890ABCDEF0123468 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		8A1B2C3D4E5F6G7H8I9J0KB /* Build configuration list for PBXNativeTarget "GPUZipTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8A1B2C3D4E5F6G7H8I9J0KD /* Debug */,
+				8A1B2C3D4E5F6G7H8I9J0KE /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
