@@ -118,7 +118,7 @@ TEST_F(CompressionTest, ParallelCompression) {
     const size_t num_threads = 4;
     const size_t size_per_thread = 1024 * 1024; // 1MB per thread
     std::vector<std::vector<uint8_t>> original_data(num_threads);
-    std::vector<std::vector<uint8_t>> compressed_data(num_threads);
+    __block std::vector<std::vector<uint8_t>> compressed_data(num_threads);
     
     // Generate data first
     for (size_t i = 0; i < num_threads; ++i) {
@@ -131,10 +131,13 @@ TEST_F(CompressionTest, ParallelCompression) {
                                                                                        QOS_CLASS_USER_INITIATED, 0));
     dispatch_group_t group = dispatch_group_create();
     
+    // Capture 'this' as a non-const pointer
+    __block auto* self = this;
+    
     // Launch compression tasks
     for (size_t i = 0; i < num_threads; ++i) {
         dispatch_group_async(group, queue, ^{
-            compressed_data[i] = std::move(engine.compress(original_data[i]));
+            compressed_data[i] = std::move(self->engine.compress(original_data[i]));
         });
     }
     
@@ -149,7 +152,7 @@ TEST_F(CompressionTest, ParallelCompression) {
     ASSERT_EQ(compressed_data.size(), num_threads);
     for (size_t i = 0; i < num_threads; ++i) {
         ASSERT_GT(compressed_data[i].size(), 0);
-        auto decompressed = engine.decompress(compressed_data[i]);
+        auto decompressed = self->engine.decompress(compressed_data[i]);
         EXPECT_EQ(original_data[i], decompressed);
     }
 }
