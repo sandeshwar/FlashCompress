@@ -24,8 +24,9 @@ public:
         
         // Load Metal library containing our shader functions
         NSString* libraryPath = [[NSBundle mainBundle] pathForResource:@"default" ofType:@"metallib"];
+        NSURL *libraryURL = [NSURL fileURLWithPath:libraryPath];
         NSError* error = nil;
-        library = [device newLibraryWithFile:libraryPath error:&error];
+        library = [device newLibraryWithURL:libraryURL error:&error];
         if (!library) {
             throw std::runtime_error("Failed to load Metal library");
         }

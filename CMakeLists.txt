@@ -1,29 +1,42 @@
 cmake_minimum_required(VERSION 3.15)
-project(GPUZip CUDA CXX)
+project(GPUZip CXX)
 
-set(CMAKE_CUDA_STANDARD 14)
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CUDA_ARCHITECTURES 75)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Find CUDA
-find_package(CUDA REQUIRED)
-include_directories(${CUDA_INCLUDE_DIRS})
+# Find required packages
+find_package(GTest REQUIRED)
 
-# Add source files
+# Main executable
 add_executable(gpuzip
-    src/main.cu
-    src/compression.cu
-    src/decompression.cu
-    src/gpu_utils.cu
+    src/main.mm
+    src/CompressionEngine.mm
 )
 
-# Set CUDA specific flags
-set_target_properties(gpuzip PROPERTIES
-    CUDA_SEPARABLE_COMPILATION ON
+# Link Metal framework and other dependencies
+target_link_libraries(gpuzip
+    "-framework Metal"
+    "-framework Foundation"
 )
 
-target_compile_options(gpuzip PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:
-    -O3
-    --use_fast_math
-    -Xptxas -O3
->)
+# Test executable
+add_executable(compression_tests
+    tests/compression_tests.mm
+    src/CompressionEngine.mm
+)
+
+# Link test dependencies
+target_link_libraries(compression_tests
+    GTest::GTest
+    GTest::Main
+    "-framework Metal"
+    "-framework Foundation"
+)
+
+# Enable testing
+enable_testing()
+add_test(NAME compression_tests COMMAND compression_tests)
+
+# Copy Metal shader file to build directory
+configure_file(${CMAKE_SOURCE_DIR}/src/Shaders.metal
+               ${CMAKE_BINARY_DIR}/Shaders.metal COPYONLY)
