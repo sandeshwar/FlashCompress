@@ -56,26 +56,35 @@ public:
             // If that fails, try loading from source code (useful for tests)
             if (!library) {
                 NSLog(@"Attempting to load Metal library from source...");
-                NSString* sourcePath = [[NSBundle mainBundle] pathForResource:@"Shaders" ofType:@"metal"];
-                NSLog(@"Shader source path: %@", sourcePath);
+                // Look in current directory first
+                NSString* sourcePath = @"Shaders.metal";
+                NSError* readError = nil;
+                NSString* source = [NSString stringWithContentsOfFile:sourcePath 
+                                                           encoding:NSUTF8StringEncoding 
+                                                              error:&readError];
                 
-                if (sourcePath) {
-                    NSString* source = [NSString stringWithContentsOfFile:sourcePath 
-                                                               encoding:NSUTF8StringEncoding 
-                                                                  error:&error];
-                    if (source) {
-                        NSLog(@"Successfully loaded shader source, compiling...");
-                        library = [device newLibraryWithSource:source 
-                                                     options:nil 
-                                                       error:&error];
-                        if (!library) {
-                            NSLog(@"Failed to compile shader source: %@", error);
-                        }
-                    } else {
-                        NSLog(@"Failed to read shader source: %@", error);
+                if (!source) {
+                    // Then try bundle
+                    sourcePath = [[NSBundle mainBundle] pathForResource:@"Shaders" ofType:@"metal"];
+                    if (sourcePath) {
+                        source = [NSString stringWithContentsOfFile:sourcePath 
+                                                         encoding:NSUTF8StringEncoding 
+                                                            error:&readError];
+                    }
+                }
+                
+                if (source) {
+                    NSLog(@"Successfully loaded shader source from %@, compiling...", sourcePath);
+                    MTLCompileOptions* options = [[MTLCompileOptions alloc] init];
+                    options.languageVersion = MTLLanguageVersion2_4;
+                    library = [device newLibraryWithSource:source 
+                                                 options:options 
+                                                   error:&error];
+                    if (!library) {
+                        NSLog(@"Failed to compile shader source: %@", error);
                     }
                 } else {
-                    NSLog(@"Could not find Shaders.metal in main bundle");
+                    NSLog(@"Failed to read shader source: %@", readError);
                 }
                 
                 // If still no library, try creating a default one
@@ -138,6 +147,14 @@ public:
             
             id<MTLBuffer> outputSizeBuffer = [device newBufferWithLength:sizeof(uint32_t)
                                                                options:MTLResourceStorageModeShared];
+
+            id<MTLBuffer> inputSizeBuffer = [device newBufferWithBytes:&input_size
+                                                              length:sizeof(uint32_t)
+                                                             options:MTLResourceStorageModeShared];
+            
+            // Initialize output size to 0
+            uint32_t initial_output_size = 0;
+            memcpy([outputSizeBuffer contents], &initial_output_size, sizeof(uint32_t));
             
             // Create command buffer and encoder
             id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
@@ -155,6 +172,7 @@ public:
             [computeEncoder setBuffer:matchLengthsBuffer offset:0 atIndex:2];
             [computeEncoder setBuffer:matchPositionsBuffer offset:0 atIndex:3];
             [computeEncoder setBuffer:outputSizeBuffer offset:0 atIndex:4];
+            [computeEncoder setBuffer:inputSizeBuffer offset:0 atIndex:5];
             
             // Calculate grid size
             NSUInteger gridSize = (input_size + THREAD_GROUP_SIZE - 1) / THREAD_GROUP_SIZE * THREAD_GROUP_SIZE;
@@ -195,6 +213,14 @@ public:
             
             id<MTLBuffer> outputSizeBuffer = [device newBufferWithLength:sizeof(uint32_t)
                                                                options:MTLResourceStorageModeShared];
+
+            id<MTLBuffer> inputSizeBuffer = [device newBufferWithBytes:&input_size
+                                                              length:sizeof(uint32_t)
+                                                             options:MTLResourceStorageModeShared];
+            
+            // Initialize output size to 0
+            uint32_t initial_output_size = 0;
+            memcpy([outputSizeBuffer contents], &initial_output_size, sizeof(uint32_t));
             
             // Create command buffer and encoder
             id<MTLCommandBuffer> commandBuffer = [commandQueue commandBuffer];
@@ -210,6 +236,7 @@ public:
             [computeEncoder setBuffer:inputBuffer offset:0 atIndex:0];
             [computeEncoder setBuffer:outputBuffer offset:0 atIndex:1];
             [computeEncoder setBuffer:outputSizeBuffer offset:0 atIndex:2];
+            [computeEncoder setBuffer:inputSizeBuffer offset:0 atIndex:3];
             
             // Calculate grid size
             NSUInteger gridSize = (input_size + THREAD_GROUP_SIZE - 1) / THREAD_GROUP_SIZE * THREAD_GROUP_SIZE;

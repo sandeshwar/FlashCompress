@@ -29,30 +29,30 @@ kernel void compress(const device uint8_t* input [[buffer(0)]],
                     device uint8_t* output [[buffer(1)]],
                     device uint32_t* match_lengths [[buffer(2)]],
                     device uint32_t* match_positions [[buffer(3)]],
-                    device uint32_t& output_size [[buffer(4)]],
-                    uint32_t input_size [[buffer(5)]],
+                    device uint32_t* output_size [[buffer(4)]],
+                    device uint32_t* input_size [[buffer(5)]],
                     uint id [[thread_position_in_grid]]) {
-    if (id >= input_size) return;
+    if (id >= *input_size) return;
     
     // Initialize with no match
     match_lengths[id] = 0;
     match_positions[id] = 0;
     
     // Don't look for matches near the end
-    if (id > input_size - MIN_MATCH_LENGTH) return;
+    if (id > *input_size - MIN_MATCH_LENGTH) return;
     
     uint32_t cur_hash = hash_function(input, id);
     uint32_t start = id > WINDOW_SIZE ? id - WINDOW_SIZE : 0;
     
     // Search for matches in the sliding window
     for (uint32_t pos = start; pos < id; pos++) {
-        if (pos + MIN_MATCH_LENGTH > input_size) break;
+        if (pos + MIN_MATCH_LENGTH > *input_size) break;
         
         uint32_t pos_hash = hash_function(input, pos);
         if (pos_hash == cur_hash && compare_sequences(input + id, input + pos, MIN_MATCH_LENGTH)) {
             // Found a potential match, try to extend it
             uint32_t len = MIN_MATCH_LENGTH;
-            while (id + len < input_size && pos + len < input_size &&
+            while (id + len < *input_size && pos + len < *input_size &&
                    input[id + len] == input[pos + len] && len < MAX_MATCH_LENGTH) {
                 len++;
             }
@@ -78,10 +78,10 @@ kernel void compress(const device uint8_t* input [[buffer(0)]],
 // Decompression kernel
 kernel void decompress(const device uint8_t* input [[buffer(0)]],
                       device uint8_t* output [[buffer(1)]],
-                      device uint32_t& output_size [[buffer(2)]],
-                      uint32_t input_size [[buffer(3)]],
+                      device uint32_t* output_size [[buffer(2)]],
+                      device uint32_t* input_size [[buffer(3)]],
                       uint id [[thread_position_in_grid]]) {
-    if (id >= input_size) return;
+    if (id >= *input_size) return;
     
     uint32_t match_length = *(const device uint32_t*)(input + id * 8);
     uint32_t match_position = *(const device uint32_t*)(input + id * 8 + 4);
@@ -91,10 +91,10 @@ kernel void decompress(const device uint8_t* input [[buffer(0)]],
         for (uint32_t i = 0; i < match_length; ++i) {
             output[id + i] = output[match_position + i];
         }
-        atomic_fetch_max_explicit((device atomic_uint*)&output_size, id + match_length, memory_order_relaxed);
+        atomic_fetch_max_explicit((device atomic_uint*)output_size, id + match_length, memory_order_relaxed);
     } else {
         // Copy literal byte
         output[id] = input[id];
-        atomic_fetch_max_explicit((device atomic_uint*)&output_size, id + 1, memory_order_relaxed);
+        atomic_fetch_max_explicit((device atomic_uint*)output_size, id + 1, memory_order_relaxed);
     }
 }
