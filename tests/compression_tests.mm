@@ -117,7 +117,7 @@ TEST_F(CompressionTest, CompressionSpeed) {
 TEST_F(CompressionTest, ParallelCompression) {
     const size_t num_threads = 4;
     const size_t size_per_thread = 1024 * 1024; // 1MB per thread
-    std::vector<std::vector<uint8_t>> original_data(num_threads);
+    std::vector<std::vector<uint8_t>> original_data(num_threads); 
     __block std::vector<std::vector<uint8_t>> compressed_data(num_threads);
     
     // Generate data first
