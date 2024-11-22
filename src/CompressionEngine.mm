@@ -16,32 +16,105 @@ private:
     
 public:
     CompressionEngine() {
-        // Get the default Metal device
-        device = MTLCreateSystemDefaultDevice();
-        if (!device) {
-            throw std::runtime_error("Failed to create Metal device");
-        }
-        
-        // Load Metal library containing our shader functions
-        NSString* libraryPath = [[NSBundle mainBundle] pathForResource:@"default" ofType:@"metallib"];
-        NSURL *libraryURL = [NSURL fileURLWithPath:libraryPath];
-        NSError* error = nil;
-        library = [device newLibraryWithURL:libraryURL error:&error];
-        if (!library) {
-            throw std::runtime_error("Failed to load Metal library");
-        }
-        
-        // Get function references
-        compressFunction = [library newFunctionWithName:@"compress"];
-        decompressFunction = [library newFunctionWithName:@"decompress"];
-        if (!compressFunction || !decompressFunction) {
-            throw std::runtime_error("Failed to load Metal functions");
-        }
-        
-        // Create command queue
-        commandQueue = [device newCommandQueue];
-        if (!commandQueue) {
-            throw std::runtime_error("Failed to create command queue");
+        @autoreleasepool {
+            NSLog(@"Initializing Metal device...");
+            
+            // Get all available Metal devices
+            NSArray<id<MTLDevice>> *devices = MTLCopyAllDevices();
+            if ([devices count] == 0) {
+                NSLog(@"No Metal devices found on the system");
+                throw std::runtime_error("No Metal devices found");
+            }
+            
+            // Use the first available device
+            device = [devices firstObject];
+            if (!device) {
+                NSLog(@"Failed to get Metal device");
+                throw std::runtime_error("Failed to get Metal device");
+            }
+            
+            NSLog(@"Successfully created Metal device: %@", [device name]);
+            NSLog(@"Device supports unified memory: %d", [device hasUnifiedMemory]);
+            NSLog(@"Device maximum buffer length: %lu", (unsigned long)[device maxBufferLength]);
+            
+            NSError* error = nil;
+            
+            // First try loading from the main bundle
+            NSString* libraryPath = [[NSBundle mainBundle] pathForResource:@"default" ofType:@"metallib"];
+            NSLog(@"Attempting to load Metal library from: %@", libraryPath);
+            
+            if (libraryPath) {
+                NSURL *libraryURL = [NSURL fileURLWithPath:libraryPath];
+                library = [device newLibraryWithURL:libraryURL error:&error];
+                if (!library) {
+                    NSLog(@"Failed to load Metal library from URL: %@", error);
+                }
+            } else {
+                NSLog(@"Could not find default.metallib in main bundle");
+            }
+            
+            // If that fails, try loading from source code (useful for tests)
+            if (!library) {
+                NSLog(@"Attempting to load Metal library from source...");
+                NSString* sourcePath = [[NSBundle mainBundle] pathForResource:@"Shaders" ofType:@"metal"];
+                NSLog(@"Shader source path: %@", sourcePath);
+                
+                if (sourcePath) {
+                    NSString* source = [NSString stringWithContentsOfFile:sourcePath 
+                                                               encoding:NSUTF8StringEncoding 
+                                                                  error:&error];
+                    if (source) {
+                        NSLog(@"Successfully loaded shader source, compiling...");
+                        library = [device newLibraryWithSource:source 
+                                                     options:nil 
+                                                       error:&error];
+                        if (!library) {
+                            NSLog(@"Failed to compile shader source: %@", error);
+                        }
+                    } else {
+                        NSLog(@"Failed to read shader source: %@", error);
+                    }
+                } else {
+                    NSLog(@"Could not find Shaders.metal in main bundle");
+                }
+                
+                // If still no library, try creating a default one
+                if (!library) {
+                    NSLog(@"Attempting to load default library...");
+                    library = [device newDefaultLibrary];
+                    if (!library) {
+                        NSLog(@"Failed to load default library");
+                    }
+                }
+            }
+            
+            if (!library) {
+                NSLog(@"All attempts to load Metal library failed: %@", error);
+                throw std::runtime_error("Failed to load Metal library");
+            }
+            
+            NSLog(@"Successfully loaded Metal library");
+            
+            // Get function references
+            compressFunction = [library newFunctionWithName:@"compress"];
+            decompressFunction = [library newFunctionWithName:@"decompress"];
+            if (!compressFunction || !decompressFunction) {
+                NSLog(@"Failed to load Metal functions. compress: %@, decompress: %@", 
+                      compressFunction ? @"OK" : @"Failed",
+                      decompressFunction ? @"OK" : @"Failed");
+                throw std::runtime_error("Failed to load Metal functions");
+            }
+            
+            NSLog(@"Successfully loaded Metal functions");
+            
+            // Create command queue
+            commandQueue = [device newCommandQueue];
+            if (!commandQueue) {
+                NSLog(@"Failed to create command queue");
+                throw std::runtime_error("Failed to create command queue");
+            }
+            
+            NSLog(@"Successfully initialized Metal device: %@", [device name]);
         }
     }
     

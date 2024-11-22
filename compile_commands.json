@@ -1,0 +1,27 @@
+[
+{
+  "directory": "/Users/sandeshwarsharma/Workspace/Playground/GPUZip",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -I/opt/homebrew/include -g -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk -std=gnu++17 -o CMakeFiles/gpuzip.dir/src/main.mm.o -c /Users/sandeshwarsharma/Workspace/Playground/GPUZip/src/main.mm",
+  "file": "/Users/sandeshwarsharma/Workspace/Playground/GPUZip/src/main.mm"
+},
+{
+  "directory": "/Users/sandeshwarsharma/Workspace/Playground/GPUZip",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -I/opt/homebrew/include -g -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk -std=gnu++17 -o CMakeFiles/gpuzip.dir/src/CompressionEngine.mm.o -c /Users/sandeshwarsharma/Workspace/Playground/GPUZip/src/CompressionEngine.mm",
+  "file": "/Users/sandeshwarsharma/Workspace/Playground/GPUZip/src/CompressionEngine.mm"
+},
+{
+  "directory": "/Users/sandeshwarsharma/Workspace/Playground/GPUZip",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -I/opt/homebrew/include -g -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk -std=gnu++17 -o CMakeFiles/compression_tests.dir/tests/compression_tests.mm.o -c /Users/sandeshwarsharma/Workspace/Playground/GPUZip/tests/compression_tests.mm",
+  "file": "/Users/sandeshwarsharma/Workspace/Playground/GPUZip/tests/compression_tests.mm"
+},
+{
+  "directory": "/Users/sandeshwarsharma/Workspace/Playground/GPUZip",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -I/opt/homebrew/include -g -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk -std=gnu++17 -o CMakeFiles/compression_tests.dir/src/CompressionEngine.mm.o -c /Users/sandeshwarsharma/Workspace/Playground/GPUZip/src/CompressionEngine.mm",
+  "file": "/Users/sandeshwarsharma/Workspace/Playground/GPUZip/src/CompressionEngine.mm"
+},
+{
+  "directory": "/Users/sandeshwarsharma/Workspace/Playground/GPUZip",
+  "command": "/Library/Developer/CommandLineTools/usr/bin/c++  -I/opt/homebrew/include -g -arch arm64 -isysroot /Library/Developer/CommandLineTools/SDKs/MacOSX14.4.sdk -std=gnu++17 -o CMakeFiles/metal_test.dir/tests/metal_test.mm.o -c /Users/sandeshwarsharma/Workspace/Playground/GPUZip/tests/metal_test.mm",
+  "file": "/Users/sandeshwarsharma/Workspace/Playground/GPUZip/tests/metal_test.mm"
+}
+]

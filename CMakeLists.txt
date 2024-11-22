@@ -1,11 +1,13 @@
-cmake_minimum_required(VERSION 3.15)
-project(GPUZip CXX)
+cmake_minimum_required(VERSION 3.10)
+project(GPUZip)
 
+# Set C++ standard
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-# Find required packages
-find_package(GTest REQUIRED)
+# Add Homebrew's include and lib directories
+include_directories(/opt/homebrew/include)
+link_directories(/opt/homebrew/lib)
 
 # Main executable
 add_executable(gpuzip
@@ -27,8 +29,9 @@ add_executable(compression_tests
 
 # Link test dependencies
 target_link_libraries(compression_tests
-    GTest::GTest
-    GTest::Main
+    gtest
+    gtest_main
+    pthread
     "-framework Metal"
     "-framework Foundation"
 )
@@ -37,6 +40,16 @@ target_link_libraries(compression_tests
 set_target_properties(compression_tests PROPERTIES
     BUILD_WITH_INSTALL_RPATH TRUE
     INSTALL_RPATH "$ORIGIN"
+)
+
+# Metal test executable
+add_executable(metal_test
+    tests/metal_test.mm
+)
+
+target_link_libraries(metal_test
+    "-framework Metal"
+    "-framework Foundation"
 )
 
 # Enable testing
