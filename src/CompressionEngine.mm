@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <iostream>
+#include <algorithm>
 
 static constexpr size_t THREAD_GROUP_SIZE = 256;
 
@@ -85,18 +86,32 @@ CompressionEngine::CompressionEngine() {
 }
 
 CompressionEngine::~CompressionEngine() {
+    @autoreleasepool {
+        if (decompressPipeline) [decompressPipeline release];
+        if (compressPipeline) [compressPipeline release];
+        if (decompressFunction) [decompressFunction release];
+        if (compressFunction) [compressFunction release];
+        if (library) [library release];
+        if (commandQueue) [commandQueue release];
+        if (device) [device release];
+    }
 }
 
 std::vector<uint8_t> CompressionEngine::compress(const std::vector<uint8_t>& input) {
     @autoreleasepool {
         size_t input_size = input.size();
+        std::cout << "Input size: " << input_size << " bytes\n";
         
         // Create buffers
         id<MTLBuffer> inputBuffer = [device newBufferWithBytes:input.data()
                                                       length:input_size
                                                      options:MTLResourceStorageModeShared];
         
-        id<MTLBuffer> outputBuffer = [device newBufferWithLength:input_size * 2
+        // Allocate enough space for the worst case (each byte becomes a literal)
+        size_t max_output_size = input_size * 2;  // Each byte could need 2 bytes (flag + literal)
+        std::cout << "Allocated output buffer size: " << max_output_size << " bytes\n";
+        
+        id<MTLBuffer> outputBuffer = [device newBufferWithLength:max_output_size
                                                        options:MTLResourceStorageModeShared];
         
         id<MTLBuffer> matchLengthsBuffer = [device newBufferWithLength:input_size * sizeof(uint32_t)
@@ -136,7 +151,9 @@ std::vector<uint8_t> CompressionEngine::compress(const std::vector<uint8_t>& inp
         MTLSize threadGroupSize = MTLSizeMake(THREAD_GROUP_SIZE, 1, 1);
         MTLSize gridDimension = MTLSizeMake(gridSize, 1, 1);
         
-        // Dispatch
+        std::cout << "Grid size: " << gridSize << ", Thread group size: " << THREAD_GROUP_SIZE << "\n";
+        
+        // First pass: Find matches
         [computeEncoder dispatchThreads:gridDimension threadsPerThreadgroup:threadGroupSize];
         [computeEncoder endEncoding];
         
@@ -146,10 +163,39 @@ std::vector<uint8_t> CompressionEngine::compress(const std::vector<uint8_t>& inp
         
         // Get output size
         uint32_t output_size = *static_cast<uint32_t*>([outputSizeBuffer contents]);
+        std::cout << "Raw output size from GPU: " << output_size << " bytes\n";
+        
+        if (output_size == 0 || output_size > max_output_size) {
+            std::cerr << "Invalid output size: " << output_size << " (max: " << max_output_size << ")\n";
+            output_size = input_size;  // Fallback to uncompressed size
+            
+            // Copy input data as literal bytes
+            uint8_t* output_data = static_cast<uint8_t*>([outputBuffer contents]);
+            for (size_t i = 0; i < input_size; i++) {
+                output_data[i * 2] = 0x00;  // Literal flag
+                output_data[i * 2 + 1] = input[i];  // Literal byte
+            }
+            output_size = input_size * 2;
+        }
         
         // Copy result
         std::vector<uint8_t> result(output_size);
         memcpy(result.data(), [outputBuffer contents], output_size);
+        
+        // Print first few bytes for debugging
+        std::cout << "First 16 bytes of output: ";
+        for (size_t i = 0; i < std::min(output_size, size_t(16)); i++) {
+            printf("%02x ", result[i]);
+        }
+        std::cout << "\n";
+        
+        // Release buffers
+        [inputBuffer release];
+        [outputBuffer release];
+        [matchLengthsBuffer release];
+        [matchPositionsBuffer release];
+        [outputSizeBuffer release];
+        [inputSizeBuffer release];
         
         return result;
     }
@@ -170,7 +216,7 @@ std::vector<uint8_t> CompressionEngine::decompress(const std::vector<uint8_t>& i
         
         id<MTLBuffer> outputSizeBuffer = [device newBufferWithLength:sizeof(uint32_t)
                                                            options:MTLResourceStorageModeShared];
-
+        
         id<MTLBuffer> inputSizeBuffer = [device newBufferWithBytes:&input_size
                                                           length:sizeof(uint32_t)
                                                          options:MTLResourceStorageModeShared];
@@ -207,10 +253,19 @@ std::vector<uint8_t> CompressionEngine::decompress(const std::vector<uint8_t>& i
         
         // Get output size
         uint32_t output_size = *static_cast<uint32_t*>([outputSizeBuffer contents]);
+        if (output_size == 0 || output_size > max_output_size) {
+            throw std::runtime_error("Decompression failed: invalid output size");
+        }
         
         // Copy result
         std::vector<uint8_t> result(output_size);
         memcpy(result.data(), [outputBuffer contents], output_size);
+        
+        // Release buffers
+        [inputBuffer release];
+        [outputBuffer release];
+        [outputSizeBuffer release];
+        [inputSizeBuffer release];
         
         return result;
     }

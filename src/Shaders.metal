@@ -39,10 +39,18 @@ kernel void compress(const device uint8_t* input [[buffer(0)]],
     match_positions[id] = 0;
     
     // Don't look for matches near the end
-    if (id > *input_size - MIN_MATCH_LENGTH) return;
+    if (id > *input_size - MIN_MATCH_LENGTH) {
+        // Write literal byte
+        uint32_t output_pos = atomic_fetch_add_explicit((device atomic_uint*)output_size, 2, memory_order_relaxed);
+        output[output_pos] = 0x00; // Flag byte: 0xxxxxxx for literal
+        output[output_pos + 1] = input[id];
+        return;
+    }
     
     uint32_t cur_hash = hash_function(input, id);
     uint32_t start = id > WINDOW_SIZE ? id - WINDOW_SIZE : 0;
+    uint32_t best_match_length = 0;
+    uint32_t best_match_pos = 0;
     
     // Search for matches in the sliding window
     for (uint32_t pos = start; pos < id; pos++) {
@@ -57,21 +65,28 @@ kernel void compress(const device uint8_t* input [[buffer(0)]],
                 len++;
             }
             
-            if (len > match_lengths[id]) {
-                match_lengths[id] = len;
-                match_positions[id] = pos;
+            if (len > best_match_length) {
+                best_match_length = len;
+                best_match_pos = pos;
             }
         }
     }
     
     // Write compressed data
-    if (match_lengths[id] >= MIN_MATCH_LENGTH) {
-        // Write match information (length and position)
-        atomic_store_explicit((device atomic_uint*)(output + id * 8), match_lengths[id], memory_order_relaxed);
-        atomic_store_explicit((device atomic_uint*)(output + id * 8 + 4), match_positions[id], memory_order_relaxed);
+    if (best_match_length >= MIN_MATCH_LENGTH) {
+        // Format: [flag byte][length (2 bytes)][position (3 bytes)]
+        uint32_t output_pos = atomic_fetch_add_explicit((device atomic_uint*)output_size, 6, memory_order_relaxed);
+        output[output_pos] = 0x80; // Flag byte: 1xxxxxxx for match
+        output[output_pos + 1] = (best_match_length >> 8) & 0xFF;
+        output[output_pos + 2] = best_match_length & 0xFF;
+        output[output_pos + 3] = (best_match_pos >> 16) & 0xFF;
+        output[output_pos + 4] = (best_match_pos >> 8) & 0xFF;
+        output[output_pos + 5] = best_match_pos & 0xFF;
     } else {
-        // Write literal byte
-        output[id] = input[id];
+        // Write literal byte with flag
+        uint32_t output_pos = atomic_fetch_add_explicit((device atomic_uint*)output_size, 2, memory_order_relaxed);
+        output[output_pos] = 0x00; // Flag byte: 0xxxxxxx for literal
+        output[output_pos + 1] = input[id];
     }
 }
 
@@ -83,18 +98,23 @@ kernel void decompress(const device uint8_t* input [[buffer(0)]],
                       uint id [[thread_position_in_grid]]) {
     if (id >= *input_size) return;
     
-    uint32_t match_length = *(const device uint32_t*)(input + id * 8);
-    uint32_t match_position = *(const device uint32_t*)(input + id * 8 + 4);
-    
-    if (match_length >= MIN_MATCH_LENGTH) {
-        // Copy matched sequence
-        for (uint32_t i = 0; i < match_length; ++i) {
-            output[id + i] = output[match_position + i];
+    uint32_t pos = 0;
+    while (pos < *input_size) {
+        uint8_t flag = input[pos];
+        if (flag & 0x80) {  // Match
+            uint32_t length = (input[pos + 1] << 8) | input[pos + 2];
+            uint32_t match_pos = (input[pos + 3] << 16) | (input[pos + 4] << 8) | input[pos + 5];
+            
+            // Copy matched sequence
+            for (uint32_t i = 0; i < length; ++i) {
+                uint32_t out_pos = atomic_fetch_add_explicit((device atomic_uint*)output_size, 1, memory_order_relaxed);
+                output[out_pos] = output[match_pos + i];
+            }
+            pos += 6;
+        } else {  // Literal
+            uint32_t out_pos = atomic_fetch_add_explicit((device atomic_uint*)output_size, 1, memory_order_relaxed);
+            output[out_pos] = input[pos + 1];
+            pos += 2;
         }
-        atomic_fetch_max_explicit((device atomic_uint*)output_size, id + match_length, memory_order_relaxed);
-    } else {
-        // Copy literal byte
-        output[id] = input[id];
-        atomic_fetch_max_explicit((device atomic_uint*)output_size, id + 1, memory_order_relaxed);
     }
 }

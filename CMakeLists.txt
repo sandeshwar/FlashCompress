@@ -6,8 +6,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_OBJCXX_STANDARD 17)
 set(CMAKE_OBJCXX_STANDARD_REQUIRED ON)
 
-# Enable testing
-enable_testing()
+# Find GTest package
+find_package(GTest REQUIRED)
 
 # Add Homebrew's include and lib directories
 include_directories(/opt/homebrew/include)
@@ -23,6 +23,7 @@ add_custom_command(
     COMMAND xcrun -sdk macosx metallib ${CMAKE_BINARY_DIR}/Shaders.air -o ${CMAKE_BINARY_DIR}/default.metallib
     DEPENDS ${CMAKE_SOURCE_DIR}/src/Shaders.metal
     COMMENT "Compiling Metal shader"
+    VERBATIM
 )
 
 # Add the metallib as a dependency
@@ -35,45 +36,55 @@ add_executable(gpuzip
 )
 
 # Link Metal framework and other dependencies
-target_link_libraries(gpuzip
+target_link_libraries(gpuzip PRIVATE
     "-framework Metal"
     "-framework Foundation"
+    "-framework QuartzCore"
 )
 
 add_dependencies(gpuzip shaders)
 
-# Test executable
+# Enable testing
+enable_testing()
+
+# Test executables
 add_executable(compression_tests
     tests/compression_tests.mm
     src/CompressionEngine.mm
 )
 
-# Link test dependencies
-target_link_libraries(compression_tests
-    gtest
-    gtest_main
-    pthread
-    "-framework Metal"
-    "-framework Foundation"
-)
-
-# Add test
-add_test(NAME compression_tests COMMAND compression_tests)
-
-# Metal test executable
 add_executable(metal_test
     tests/metal_test.mm
+    src/CompressionEngine.mm
 )
 
-target_link_libraries(metal_test
+# Link test dependencies
+target_link_libraries(compression_tests PRIVATE
+    GTest::GTest
+    GTest::Main
     "-framework Metal"
     "-framework Foundation"
+    "-framework QuartzCore"
 )
 
+target_link_libraries(metal_test PRIVATE
+    GTest::GTest
+    GTest::Main
+    "-framework Metal"
+    "-framework Foundation"
+    "-framework QuartzCore"
+)
+
+# Add dependencies on shaders
+add_dependencies(compression_tests shaders)
 add_dependencies(metal_test shaders)
 
-# Set RPATH for the test executable
-set_target_properties(compression_tests PROPERTIES
+# Set RPATH for test executables
+set_target_properties(compression_tests metal_test PROPERTIES
     BUILD_WITH_INSTALL_RPATH TRUE
     INSTALL_RPATH "$ORIGIN"
 )
+
+# Add tests
+add_test(NAME metal_test COMMAND metal_test)
+add_test(NAME compression_tests COMMAND compression_tests)

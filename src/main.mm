@@ -1,96 +1,85 @@
+#import <Foundation/Foundation.h>
+#import <Metal/Metal.h>
+#include "CompressionEngine.h"
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include <chrono>
-#include "CompressionEngine.h"
 
 void printUsage() {
-    std::cout << "Usage: gpuzip [compress|decompress] input_file output_file\n";
+    std::cout << "Usage: gpuzip [command] [input_file] [output_file]\n"
+              << "Commands:\n"
+              << "  compress   - Compress input_file to output_file\n"
+              << "  decompress - Decompress input_file to output_file\n";
 }
 
-bool readFile(const std::string& path, std::vector<uint8_t>& data) {
-    std::ifstream file(path, std::ios::binary);
-    if (!file) {
-        std::cerr << "Error: Cannot open input file: " << path << "\n";
-        return false;
+std::vector<uint8_t> readFile(const std::string& filename) {
+    std::ifstream file(filename, std::ios::binary | std::ios::ate);
+    if (!file.is_open()) {
+        throw std::runtime_error("Failed to open file: " + filename);
     }
     
-    file.seekg(0, std::ios::end);
     size_t size = file.tellg();
     file.seekg(0, std::ios::beg);
     
-    data.resize(size);
-    file.read(reinterpret_cast<char*>(data.data()), size);
-    return true;
-}
-
-bool writeFile(const std::string& path, const std::vector<uint8_t>& data) {
-    std::ofstream file(path, std::ios::binary);
-    if (!file) {
-        std::cerr << "Error: Cannot create output file: " << path << "\n";
-        return false;
+    std::vector<uint8_t> buffer(size);
+    if (!file.read(reinterpret_cast<char*>(buffer.data()), size)) {
+        throw std::runtime_error("Failed to read file: " + filename);
     }
     
-    file.write(reinterpret_cast<const char*>(data.data()), data.size());
-    return true;
+    return buffer;
 }
 
-int main(int argc, char* argv[]) {
-    if (argc != 4) {
-        printUsage();
-        return 1;
+void writeFile(const std::string& filename, const std::vector<uint8_t>& data) {
+    std::ofstream file(filename, std::ios::binary);
+    if (!file.is_open()) {
+        throw std::runtime_error("Failed to open file for writing: " + filename);
     }
     
-    std::string mode = argv[1];
-    std::string input_path = argv[2];
-    std::string output_path = argv[3];
-    
-    try {
-        // Initialize compression engine
-        CompressionEngine engine;
-        
-        // Read input file
-        std::vector<uint8_t> input_data;
-        if (!readFile(input_path, input_data)) {
-            return 1;
-        }
-        
-        // Process the file
-        auto start_time = std::chrono::high_resolution_clock::now();
-        std::vector<uint8_t> output_data;
-        
-        if (mode == "compress") {
-            output_data = engine.compress(input_data);
-            
-            // Calculate compression ratio
-            double ratio = static_cast<double>(input_data.size()) / output_data.size();
-            std::cout << "Compression ratio: " << ratio << ":1\n";
-            
-        } else if (mode == "decompress") {
-            output_data = engine.decompress(input_data);
-        } else {
-            std::cerr << "Error: Invalid mode. Use 'compress' or 'decompress'\n";
+    if (!file.write(reinterpret_cast<const char*>(data.data()), data.size())) {
+        throw std::runtime_error("Failed to write file: " + filename);
+    }
+}
+
+int main(int argc, const char* argv[]) {
+    @autoreleasepool {
+        if (argc != 4) {
             printUsage();
             return 1;
         }
         
-        auto end_time = std::chrono::high_resolution_clock::now();
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(end_time - start_time);
+        std::string command = argv[1];
+        std::string input_file = argv[2];
+        std::string output_file = argv[3];
         
-        // Write output file
-        if (!writeFile(output_path, output_data)) {
+        try {
+            CompressionEngine engine;
+            std::vector<uint8_t> input_data = readFile(input_file);
+            std::vector<uint8_t> output_data;
+            
+            if (command == "compress") {
+                std::cout << "Compressing " << input_file << " to " << output_file << "...\n";
+                output_data = engine.compress(input_data);
+                std::cout << "Compressed size: " << output_data.size() << " bytes "
+                         << "(ratio: " << (float)output_data.size() / input_data.size() * 100 << "%)\n";
+            }
+            else if (command == "decompress") {
+                std::cout << "Decompressing " << input_file << " to " << output_file << "...\n";
+                output_data = engine.decompress(input_data);
+                std::cout << "Decompressed size: " << output_data.size() << " bytes\n";
+            }
+            else {
+                printUsage();
+                return 1;
+            }
+            
+            writeFile(output_file, output_data);
+            std::cout << "Operation completed successfully.\n";
+            
+        } catch (const std::exception& e) {
+            std::cerr << "Error: " << e.what() << "\n";
             return 1;
         }
         
-        // Print statistics
-        std::cout << "Operation completed in " << duration.count() << "ms\n";
-        std::cout << "Input size: " << input_data.size() << " bytes\n";
-        std::cout << "Output size: " << output_data.size() << " bytes\n";
-        
         return 0;
-        
-    } catch (const std::exception& e) {
-        std::cerr << "Error: " << e.what() << "\n";
-        return 1;
     }
 }
