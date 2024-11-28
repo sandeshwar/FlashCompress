@@ -52,3 +52,9 @@ workflows:
       - evals-test-assertions-job
 orbs:
   evals: circleci/evals@2.0
+  codecov: codecov/codecov@5
+workflows:
+  upload-to-codecov:
+    jobs:
+      - checkout 
+      - codecov/upload
