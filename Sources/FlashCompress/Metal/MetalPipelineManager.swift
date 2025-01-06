@@ -1,7 +1,8 @@
-import Metal
 import Foundation
+import Metal
+import FlashCompress
 
-/// Manages Metal compute pipelines for compression operations
+/// Manages Metal resources and pipeline states
 final class MetalPipelineManager {
     static let shared = MetalPipelineManager()
     
@@ -11,43 +12,67 @@ final class MetalPipelineManager {
     
     private init() {
         guard let device = MTLCreateSystemDefaultDevice() else {
-            fatalError("GPU not available")
+            fatalError("Metal is not supported on this device")
         }
-        self.device = device
         
         guard let commandQueue = device.makeCommandQueue() else {
-            fatalError("Could not create command queue")
+            fatalError("Failed to create command queue")
         }
+        
+        self.device = device
         self.commandQueue = commandQueue
         
         setupPipelines()
     }
     
     private func setupPipelines() {
-        guard let library = try? device.makeDefaultLibrary() else {
-            fatalError("Could not create Metal library")
+        // First try to load from the default library
+        if let defaultLibrary = device.makeDefaultLibrary() {
+            loadKernels(from: defaultLibrary)
+            return
         }
         
-        let kernelNames = ["compressBlock", "buildDictionary", "findPatterns"]
+        // If default library fails, try to load from the bundled metallib
+        if let libraryURL = Bundle.module.url(forResource: "default", withExtension: "metallib", subdirectory: "Metal"),
+           let library = try? device.makeLibrary(URL: libraryURL) {
+            loadKernels(from: library)
+            return
+        }
+        
+        // If both methods fail, try to compile from source
+        if let sourceURL = Bundle.module.url(forResource: "Kernels", withExtension: "metal", subdirectory: "Metal"),
+           let source = try? String(contentsOf: sourceURL),
+           let library = try? device.makeLibrary(source: source, options: nil) {
+            loadKernels(from: library)
+            return
+        }
+        
+        print("Failed to load Metal library through any method")
+    }
+    
+    private func loadKernels(from library: MTLLibrary) {
+        let kernelNames = ["compressBlock"]
         
         for name in kernelNames {
             guard let function = library.makeFunction(name: name) else {
-                fatalError("Could not create function \(name)")
+                print("Failed to create function for kernel: \(name)")
+                continue
             }
             
             do {
                 let pipelineState = try device.makeComputePipelineState(function: function)
                 computePipelineStates[name] = pipelineState
             } catch {
-                fatalError("Could not create pipeline state for \(name): \(error)")
+                print("Failed to create pipeline state for kernel: \(name), error: \(error)")
             }
         }
     }
     
     /// Creates a Metal buffer from data
     func makeBuffer<T>(_ data: [T], options: MTLResourceOptions = []) -> MTLBuffer? {
-        let length = MemoryLayout<T>.stride * data.count
-        return device.makeBuffer(bytes: data, length: length, options: options)
+        return data.withUnsafeBytes { ptr in
+            device.makeBuffer(bytes: ptr.baseAddress!, length: ptr.count, options: options)
+        }
     }
     
     /// Creates an empty Metal buffer
@@ -55,40 +80,40 @@ final class MetalPipelineManager {
         return device.makeBuffer(length: length, options: options)
     }
     
-    /// Executes a compute kernel
+    /// Executes a Metal compute kernel
     func execute(
         kernel: String,
         buffers: [MTLBuffer],
         threadCount: Int,
         completion: @escaping (Error?) -> Void
     ) {
-        guard let pipelineState = computePipelineStates[kernel] else {
-            completion(NSError(domain: "MetalPipeline", code: -1, userInfo: [NSLocalizedDescriptionKey: "Invalid kernel name"]))
-            return
-        }
-        
         guard let commandBuffer = commandQueue.makeCommandBuffer(),
-              let computeEncoder = commandBuffer.makeComputeCommandEncoder() else {
-            completion(NSError(domain: "MetalPipeline", code: -2, userInfo: [NSLocalizedDescriptionKey: "Could not create command buffer or encoder"]))
+              let computeEncoder = commandBuffer.makeComputeCommandEncoder(),
+              let pipelineState = computePipelineStates[kernel] else {
+            completion(FlashCompressError.commandCreationFailed)
             return
         }
         
         computeEncoder.setComputePipelineState(pipelineState)
         
+        // Set buffers
         for (index, buffer) in buffers.enumerated() {
             computeEncoder.setBuffer(buffer, offset: 0, index: index)
         }
         
-        let threadExecutionWidth = pipelineState.threadExecutionWidth
-        let threadsPerThreadgroup = MTLSize(width: threadExecutionWidth, height: 1, depth: 1)
-        let threadgroupCount = (threadCount + threadExecutionWidth - 1) / threadExecutionWidth
-        let threadgroups = MTLSize(width: threadgroupCount, height: 1, depth: 1)
+        // Calculate thread groups
+        let maxThreadsPerGroup = pipelineState.maxTotalThreadsPerThreadgroup
+        let threadsPerGroup = min(maxThreadsPerGroup, threadCount)
+        let threadgroupsPerGrid = (threadCount + threadsPerGroup - 1) / threadsPerGroup
         
-        computeEncoder.dispatchThreadgroups(threadgroups, threadsPerThreadgroup: threadsPerThreadgroup)
+        let threadGroupSize = MTLSize(width: threadsPerGroup, height: 1, depth: 1)
+        let threadGroups = MTLSize(width: threadgroupsPerGrid, height: 1, depth: 1)
+        
+        computeEncoder.dispatchThreadgroups(threadGroups, threadsPerThreadgroup: threadGroupSize)
         computeEncoder.endEncoding()
         
-        commandBuffer.addCompletedHandler { buffer in
-            completion(buffer.error)
+        commandBuffer.addCompletedHandler { _ in
+            completion(nil)
         }
         
         commandBuffer.commit()

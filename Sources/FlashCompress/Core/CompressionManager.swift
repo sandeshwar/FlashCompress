@@ -1,5 +1,4 @@
 import Foundation
-import Metal
 
 /// Manages the compression and decompression operations
 final class CompressionManager {
@@ -8,6 +7,12 @@ final class CompressionManager {
     private let metalPipeline: MetalPipelineManager
     private let fileManager: FileManager
     private let chunkSize = 1024 * 1024 // 1MB chunks
+    
+    // Compression parameters
+    private let windowSize: UInt32 = 32768    // 32KB sliding window
+    private let minMatchLength: UInt32 = 3     // Minimum match length for LZ77
+    private let maxMatchLength: UInt32 = 258   // Maximum match length
+    private let dictionarySize: UInt32 = 4096  // Dictionary size for compression
     
     private init() {
         self.metalPipeline = .shared
@@ -26,6 +31,15 @@ final class CompressionManager {
             return
         }
         
+        // Create output stream and ensure the directory exists
+        let directory = destinationURL.deletingLastPathComponent()
+        do {
+            try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
+        } catch {
+            completion(.failure(CompressionError.outputStreamCreationFailed))
+            return
+        }
+        
         guard let outputStream = OutputStream(url: destinationURL, append: false) else {
             completion(.failure(CompressionError.outputStreamCreationFailed))
             return
@@ -39,12 +53,28 @@ final class CompressionManager {
             outputStream.close()
         }
         
+        // Get file size for progress tracking
         let fileSize = (try? sourceURL.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
         var totalBytesProcessed = 0
         
-        var buffer = [UInt8](repeating: 0, count: chunkSize)
+        // Write file header
+        let header = CompressedFileHeader(
+            signature: CompressedFileHeader.signature,
+            version: CompressedFileHeader.currentVersion,
+            windowSize: windowSize,
+            minMatchLength: minMatchLength,
+            maxMatchLength: maxMatchLength,
+            dictionarySize: dictionarySize
+        )
         
+        guard header.write(to: outputStream) else {
+            completion(.failure(CompressionError.writeError))
+            return
+        }
+        
+        // Process file in chunks
         func processNextChunk() {
+            var buffer = [UInt8](repeating: 0, count: chunkSize)
             let bytesRead = inputStream.read(&buffer, maxLength: chunkSize)
             
             if bytesRead < 0 {
@@ -57,27 +87,34 @@ final class CompressionManager {
                 return
             }
             
-            compressChunk(
-                Array(buffer.prefix(bytesRead)),
-                completion: { result in
-                    switch result {
-                    case .success(let compressedData):
-                        let written = outputStream.write(compressedData, maxLength: compressedData.count)
-                        if written < 0 {
-                            completion(.failure(CompressionError.writeError))
-                            return
-                        }
-                        
-                        totalBytesProcessed += bytesRead
-                        progress(Double(totalBytesProcessed) / Double(fileSize))
-                        
-                        processNextChunk()
-                        
-                    case .failure(let error):
-                        completion(.failure(error))
+            let chunk = Array(buffer.prefix(bytesRead))
+            compressChunk(chunk) { result in
+                switch result {
+                case .success(let compressedData):
+                    // Write compressed size first (4 bytes)
+                    var size = UInt32(compressedData.count).littleEndian
+                    let sizeData = withUnsafeBytes(of: &size) { Array($0) }
+                    
+                    guard outputStream.write(sizeData, maxLength: sizeData.count) == sizeData.count else {
+                        completion(.failure(CompressionError.writeError))
+                        return
                     }
+                    
+                    let written = outputStream.write(compressedData, maxLength: compressedData.count)
+                    if written < 0 {
+                        completion(.failure(CompressionError.writeError))
+                        return
+                    }
+                    
+                    totalBytesProcessed += bytesRead
+                    progress(Double(totalBytesProcessed) / Double(fileSize))
+                    
+                    processNextChunk()
+                    
+                case .failure(let error):
+                    completion(.failure(error))
                 }
-            )
+            }
         }
         
         processNextChunk()
@@ -88,26 +125,38 @@ final class CompressionManager {
         _ data: [UInt8],
         completion: @escaping (Result<[UInt8], Error>) -> Void
     ) {
+        // Create aligned buffers
         guard let inputBuffer = metalPipeline.makeBuffer(data),
-              let outputBuffer = metalPipeline.makeBuffer(length: data.count) else {
+              let outputBuffer = metalPipeline.makeBuffer(length: data.count * 2 + 256), // Extra space for metadata
+              let outputSizeBuffer = metalPipeline.makeBuffer(length: MemoryLayout<UInt32>.stride) else {
             completion(.failure(CompressionError.bufferCreationFailed))
             return
         }
         
-        var params = CompressionParams(
+        // Initialize output size to 0 with proper alignment
+        let outputSizePtr = outputSizeBuffer.contents().bindMemory(to: UInt32.self, capacity: 1)
+        outputSizePtr.pointee = 0
+        
+        let params = CompressionParams(
             inputLength: UInt32(data.count),
-            dictionarySize: 4096,
-            windowSize: 32768
+            dictionarySize: dictionarySize,
+            windowSize: windowSize,
+            minMatchLength: minMatchLength,
+            maxMatchLength: maxMatchLength
         )
         
-        guard let paramsBuffer = metalPipeline.makeBuffer([params]) else {
+        // Create aligned params buffer
+        guard let paramsBuffer = metalPipeline.makeBuffer(length: MemoryLayout<CompressionParams>.stride) else {
             completion(.failure(CompressionError.bufferCreationFailed))
             return
         }
+        
+        // Copy params with proper alignment
+        paramsBuffer.contents().bindMemory(to: CompressionParams.self, capacity: 1).pointee = params
         
         metalPipeline.execute(
             kernel: "compressBlock",
-            buffers: [inputBuffer, outputBuffer, paramsBuffer],
+            buffers: [inputBuffer, outputBuffer, paramsBuffer, outputSizeBuffer],
             threadCount: data.count
         ) { error in
             if let error = error {
@@ -115,8 +164,13 @@ final class CompressionManager {
                 return
             }
             
-            let ptr = outputBuffer.contents().assumingMemoryBound(to: UInt8.self)
-            let compressedData = Array(UnsafeBufferPointer(start: ptr, count: data.count))
+            // Read the compressed size
+            let compressedSize = outputSizePtr.pointee
+            
+            // Read the compressed data
+            let outputPtr = outputBuffer.contents().bindMemory(to: UInt8.self, capacity: Int(compressedSize))
+            let compressedData = Array(UnsafeBufferPointer(start: outputPtr, count: Int(compressedSize)))
+            
             completion(.success(compressedData))
         }
     }
@@ -129,6 +183,7 @@ enum CompressionError: LocalizedError {
     case readError
     case writeError
     case bufferCreationFailed
+    case metalError(String)
     
     var errorDescription: String? {
         switch self {
@@ -142,13 +197,8 @@ enum CompressionError: LocalizedError {
             return "Error writing to output stream"
         case .bufferCreationFailed:
             return "Failed to create Metal buffer"
+        case .metalError(let message):
+            return "Metal error: \(message)"
         }
     }
-}
-
-/// Structure to hold compression parameters for Metal kernels
-struct CompressionParams {
-    let inputLength: UInt32
-    let dictionarySize: UInt32
-    let windowSize: UInt32
 }

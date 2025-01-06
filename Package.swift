@@ -9,15 +9,16 @@ let package = Package(
     products: [
         .executable(name: "FlashCompress", targets: ["FlashCompress"])
     ],
-    dependencies: [
-        // Add dependencies here as needed
-    ],
+    dependencies: [],
     targets: [
         .executableTarget(
             name: "FlashCompress",
-            dependencies: [],
+            exclude: [
+                "Metal/Kernels.air"
+            ],
             resources: [
-                .process("Resources")
+                .process("Resources"),
+                .process("Metal", localization: nil)
             ]
         ),
         .testTarget(

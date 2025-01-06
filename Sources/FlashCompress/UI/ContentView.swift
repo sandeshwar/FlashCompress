@@ -1,4 +1,5 @@
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct ContentView: View {
     @StateObject private var viewModel = ContentViewModel()
@@ -51,8 +52,21 @@ struct FileItemView: View {
             
             if item.isProcessing {
                 Spacer()
-                ProgressView()
+                ProgressView(value: item.progress)
                     .progressViewStyle(.circular)
+            } else {
+                Spacer()
+                switch item.status {
+                case .pending:
+                    Text("Pending")
+                case .completed:
+                    Image(systemName: "checkmark")
+                        .foregroundColor(.green)
+                case .failed(let error):
+                    Image(systemName: "xmark")
+                        .foregroundColor(.red)
+                    Text("Error: \(error.localizedDescription)")
+                }
             }
         }
         .padding(.vertical, 4)
@@ -61,6 +75,7 @@ struct FileItemView: View {
 
 class ContentViewModel: ObservableObject {
     @Published var items: [FileItem] = []
+    private let compressionManager = CompressionManager.shared
     
     func addFiles() {
         let panel = NSOpenPanel()
@@ -91,7 +106,7 @@ class ContentViewModel: ObservableObject {
         guard !items.isEmpty else { return }
         
         let panel = NSSavePanel()
-        panel.allowedContentTypes = [.archive]
+        panel.allowedContentTypes = [UTType.archive]
         panel.nameFieldStringValue = "Compressed.flashzip"
         
         guard panel.runModal() == .OK,
@@ -104,7 +119,27 @@ class ContentViewModel: ObservableObject {
             return newItem
         }
         
-        // TODO: Implement actual compression using CompressionManager
+        // Compress each item
+        for (index, item) in items.enumerated() {
+            compressionManager.compressFile(at: item.url, to: destinationURL) { progress in
+                DispatchQueue.main.async {
+                    // Update progress for this item
+                    self.items[index].progress = progress
+                }
+            } completion: { result in
+                DispatchQueue.main.async {
+                    // Mark item as complete
+                    self.items[index].isProcessing = false
+                    
+                    switch result {
+                    case .success:
+                        self.items[index].status = .completed
+                    case .failure(let error):
+                        self.items[index].status = .failed(error)
+                    }
+                }
+            }
+        }
     }
 }
 
@@ -112,6 +147,8 @@ struct FileItem: Identifiable {
     let id = UUID()
     let url: URL
     var isProcessing: Bool = false
+    var progress: Double = 0
+    var status: CompressionStatus = .pending
     
     var isDirectory: Bool {
         (try? url.resourceValues(forKeys: [.isDirectoryKey]))?.isDirectory == true
@@ -128,4 +165,10 @@ struct FileItem: Identifiable {
         
         return formatter.string(fromByteCount: Int64(size))
     }
+}
+
+enum CompressionStatus {
+    case pending
+    case completed
+    case failed(Error)
 }
