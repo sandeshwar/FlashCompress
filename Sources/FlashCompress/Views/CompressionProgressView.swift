@@ -50,17 +50,17 @@ struct CompressionProgressView: View {
                 // Progress text
                 VStack(spacing: 4) {
                     Text("\(Int(progress * 100))%")
-                        .font(.system(size: 36, weight: .bold))
+                        .font(FontTheme.title)
                         .foregroundColor(ColorTheme.primary)
                     
                     Text("Complete")
-                        .font(.system(size: 16))
+                        .font(FontTheme.body)
                         .foregroundColor(ColorTheme.text.opacity(0.6))
                 }
             }
             
             Text("\(filesCompleted) of \(totalFiles) files completed")
-                .font(.system(size: 16))
+                .font(FontTheme.body)
                 .foregroundColor(ColorTheme.text.opacity(0.6))
         }
     }
@@ -68,19 +68,19 @@ struct CompressionProgressView: View {
     private var fileInfo: some View {
         VStack(spacing: 12) {
             Text("Currently Processing")
-                .font(.system(size: 16))
+                .font(FontTheme.body)
                 .foregroundColor(ColorTheme.text.opacity(0.6))
             
             HStack(spacing: 12) {
                 Image(systemName: "doc.fill")
-                    .font(.system(size: 20))
+                    .font(FontTheme.smallIcon)
                     .foregroundColor(ColorTheme.primary)
                     .frame(width: 40, height: 40)
                     .background(ColorTheme.primary.opacity(0.1))
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                 
                 Text(currentFileName)
-                    .font(.system(size: 16, weight: .medium))
+                    .font(FontTheme.body.weight(.medium))
                     .foregroundColor(ColorTheme.text)
                     .lineLimit(1)
                     .truncationMode(.middle)
@@ -101,7 +101,7 @@ struct CompressionProgressView: View {
     private var cancelButton: some View {
         Button(action: onCancel) {
             Text("Cancel")
-                .font(.system(size: 16, weight: .medium))
+                .font(FontTheme.body.weight(.medium))
                 .foregroundColor(ColorTheme.accent)
                 .padding(.horizontal, 32)
                 .padding(.vertical, 12)

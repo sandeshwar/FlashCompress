@@ -27,11 +27,11 @@ struct PrimaryButton: View {
                         .scaleEffect(0.8)
                 } else if let icon = icon {
                     Image(systemName: icon)
-                        .font(.system(size: 16, weight: .medium))
+                        .font(FontTheme.body.weight(.medium))
                 }
                 
                 Text(title)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(FontTheme.body.weight(.semibold))
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 16)

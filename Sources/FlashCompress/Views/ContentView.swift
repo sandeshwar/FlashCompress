@@ -48,16 +48,16 @@ struct ContentView: View {
         HStack {
             HStack(spacing: 12) {
                 Image(systemName: "bolt.square.fill")
-                    .font(.system(size: 32))
+                    .font(FontTheme.mediumIcon)
                     .foregroundColor(ColorTheme.primary)
                 
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Flash Compress")
-                        .font(.system(size: 32, weight: .heavy, design: .rounded))
+                        .font(FontTheme.title)
                         .foregroundColor(ColorTheme.text)
                     
                     Text("Blazing fast compression for your files")
-                        .font(.system(size: 16, design: .rounded))
+                        .font(FontTheme.subtitle)
                         .foregroundColor(ColorTheme.text.opacity(0.6))
                 }
             }
@@ -66,7 +66,7 @@ struct ContentView: View {
             
             Button(action: viewModel.addFiles) {
                 Image(systemName: "plus")
-                    .font(.system(size: 20, weight: .medium))
+                    .font(FontTheme.smallIcon.weight(.medium))
                     .foregroundColor(ColorTheme.text)
                     .frame(width: 40, height: 40)
                     .background(ColorTheme.primary)
@@ -84,16 +84,16 @@ struct ContentView: View {
         CardView {
             VStack(spacing: 24) {
                 Image(systemName: "arrow.down.doc.fill")
-                    .font(.system(size: 48))
+                    .font(FontTheme.largeIcon)
                     .foregroundColor(viewModel.isDropTargeted ? ColorTheme.primary : ColorTheme.text.opacity(0.3))
                 
                 VStack(spacing: 8) {
                     Text("Drag and drop files here")
-                        .font(.system(size: 18, weight: .medium))
+                        .font(FontTheme.body)
                         .foregroundColor(ColorTheme.text)
                     
                     Text("or")
-                        .font(.system(size: 16))
+                        .font(FontTheme.caption)
                         .foregroundColor(ColorTheme.text.opacity(0.6))
                 }
                 
@@ -123,7 +123,7 @@ struct ContentView: View {
     private var fileList: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("Selected Files")
-                .font(.system(size: 18, weight: .semibold))
+                .font(FontTheme.body.weight(.semibold))
                 .foregroundColor(ColorTheme.text)
             
             ForEach(viewModel.items) { item in
