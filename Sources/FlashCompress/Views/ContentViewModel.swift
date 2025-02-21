@@ -21,11 +21,28 @@ class ContentViewModel: ObservableObject {
     }
     
     func handleDrop(providers: [NSItemProvider]) {
-        Task { @MainActor in
-            for provider in providers {
-                if let url = try? await provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier) as? URL {
-                    self.items.append(FileItem(url: url))
+        Task {
+            let urls = await withTaskGroup(of: URL?.self) { group in
+                for provider in providers {
+                    group.addTask {
+                        if let url = try? await provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier) as? URL {
+                            return url
+                        }
+                        return nil
+                    }
                 }
+                
+                var urls: [URL] = []
+                for await url in group {
+                    if let url = url {
+                        urls.append(url)
+                    }
+                }
+                return urls
+            }
+            
+            await MainActor.run {
+                items.append(contentsOf: urls.map { FileItem(url: $0) })
             }
         }
     }

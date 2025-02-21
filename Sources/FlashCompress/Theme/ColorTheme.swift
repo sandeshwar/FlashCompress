@@ -1,13 +1,15 @@
 import SwiftUI
 
 enum ColorTheme {
-    static let primary = Color(hex: "6C63FF")    // Vibrant purple
-    static let secondary = Color(hex: "4ECDC4")  // Turquoise
-    static let accent = Color(hex: "FF6B6B")     // Coral
-    static let background = Color(hex: "F7F7F9") // Light gray
-    static let text = Color(hex: "2C3E50")       // Dark blue-gray
-    static let success = Color(hex: "2ECC71")    // Green
-    static let warning = Color(hex: "F1C40F")    // Yellow
+    static let primary = Color(hex: "#FFC107")    // Amber/Gold - Vibrant accent color
+    static let secondary = Color(hex: "#64B5F6")  // Light Blue - Secondary accent
+    static let accent = Color(hex: "#FF5733")     // Vivid Orange-Red - Call to action
+    static let background = Color(hex: "#1E1E1E") // Dark gray - Main background
+    static let cardBackground = Color(hex: "#2D2D2D") // Slightly lighter background for cards
+    static let text = Color(hex: "#FFFFFF")       // White - Primary text
+    static let textSecondary = Color(hex: "#9E9E9E") // Gray - Secondary text
+    static let success = Color(hex: "#4CAF50")    // Green - Success indicators
+    static let warning = Color(hex: "#FFEB3B")    // Yellow - Warning indicators
 }
 
 extension Color {

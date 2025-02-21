@@ -87,10 +87,10 @@ struct CompressionProgressView: View {
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 16)
-            .background(Color.white)
+            .background(ColorTheme.cardBackground)
             .cornerRadius(12)
             .shadow(
-                color: Color.black.opacity(0.05),
+                color: Color.black.opacity(0.2),
                 radius: 8,
                 x: 0,
                 y: 4

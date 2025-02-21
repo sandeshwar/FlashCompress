@@ -2,7 +2,7 @@
 import PackageDescription
 
 let package = Package(
-    name: "FlashCompress",
+    name: "Flash Compress",
     platforms: [
         .macOS(.v13)
     ],

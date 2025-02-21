@@ -47,11 +47,11 @@ struct ContentView: View {
     private var header: some View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
-                Text("FlashCompress")
+                Text("Flash Compress")
                     .font(.system(size: 28, weight: .bold))
                     .foregroundColor(ColorTheme.text)
                 
-                Text("Fast and efficient file compression")
+                Text("Blazing fast compression for your files")
                     .font(.system(size: 16))
                     .foregroundColor(ColorTheme.text.opacity(0.6))
             }
@@ -61,7 +61,7 @@ struct ContentView: View {
             Button(action: viewModel.addFiles) {
                 Image(systemName: "plus")
                     .font(.system(size: 20, weight: .medium))
-                    .foregroundColor(.white)
+                    .foregroundColor(ColorTheme.text)
                     .frame(width: 40, height: 40)
                     .background(ColorTheme.primary)
                     .clipShape(Circle())
@@ -70,8 +70,8 @@ struct ContentView: View {
             .shadow(color: ColorTheme.primary.opacity(0.3), radius: 8)
         }
         .padding(24)
-        .background(.white)
-        .shadow(color: Color.black.opacity(0.05), radius: 8, y: 4)
+        .background(ColorTheme.cardBackground)
+        .shadow(color: Color.black.opacity(0.2), radius: 8, y: 4)
     }
     
     private var dropZone: some View {
@@ -163,4 +163,4 @@ extension ContentViewModel {
     var currentProcessingItem: FileItem? {
         items.first { $0.isProcessing }
     }
-} 
+}

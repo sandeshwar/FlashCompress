@@ -10,10 +10,10 @@ struct CardView<Content: View>: View {
     var body: some View {
         content
             .padding(24)
-            .background(Color.white)
+            .background(ColorTheme.cardBackground)
             .cornerRadius(16)
             .shadow(
-                color: Color.black.opacity(0.05),
+                color: Color.black.opacity(0.2),
                 radius: 16,
                 x: 0,
                 y: 8
