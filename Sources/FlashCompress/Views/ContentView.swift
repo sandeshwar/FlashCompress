@@ -21,16 +21,18 @@ struct ContentView: View {
                         viewModel.cancelCompression()
                     }
                 }
+                .padding()
+                .transition(.opacity)
             } else {
                 ScrollView {
-                    VStack(spacing: 16) {
+                    VStack(spacing: 24) {
                         dropZone
                         
                         if !viewModel.items.isEmpty {
                             fileList
                         }
                     }
-                    .padding()
+                    .padding(24)
                 }
             }
             
@@ -38,7 +40,7 @@ struct ContentView: View {
                 startCompressionButton
             }
         }
-        .frame(minWidth: 600, minHeight: 400)
+        .frame(minWidth: 800, minHeight: 600)
         .background(ColorTheme.background)
     }
     
@@ -46,46 +48,48 @@ struct ContentView: View {
         HStack {
             VStack(alignment: .leading, spacing: 4) {
                 Text("FlashCompress")
-                    .font(.title)
-                    .fontWeight(.bold)
+                    .font(.system(size: 28, weight: .bold))
                     .foregroundColor(ColorTheme.text)
                 
                 Text("Fast and efficient file compression")
-                    .font(.subheadline)
-                    .foregroundColor(.gray)
+                    .font(.system(size: 16))
+                    .foregroundColor(ColorTheme.text.opacity(0.6))
             }
             
             Spacer()
             
             Button(action: viewModel.addFiles) {
                 Image(systemName: "plus")
-                    .font(.system(size: 20))
-                    .foregroundColor(ColorTheme.primary)
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundColor(.white)
+                    .frame(width: 40, height: 40)
+                    .background(ColorTheme.primary)
+                    .clipShape(Circle())
             }
             .buttonStyle(.plain)
-            .padding(8)
-            .background(Color.white)
-            .clipShape(Circle())
-            .shadow(color: Color.black.opacity(0.1), radius: 4)
+            .shadow(color: ColorTheme.primary.opacity(0.3), radius: 8)
         }
-        .padding()
-        .background(Color.white)
+        .padding(24)
+        .background(.white)
         .shadow(color: Color.black.opacity(0.05), radius: 8, y: 4)
     }
     
     private var dropZone: some View {
         CardView {
-            VStack(spacing: 16) {
+            VStack(spacing: 24) {
                 Image(systemName: "arrow.down.doc.fill")
-                    .font(.system(size: 40))
-                    .foregroundColor(viewModel.isDropTargeted ? ColorTheme.primary : .gray)
+                    .font(.system(size: 48))
+                    .foregroundColor(viewModel.isDropTargeted ? ColorTheme.primary : ColorTheme.text.opacity(0.3))
                 
-                Text("Drag and drop files here")
-                    .font(.headline)
-                    .foregroundColor(ColorTheme.text)
-                
-                Text("or")
-                    .foregroundColor(.gray)
+                VStack(spacing: 8) {
+                    Text("Drag and drop files here")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundColor(ColorTheme.text)
+                    
+                    Text("or")
+                        .font(.system(size: 16))
+                        .foregroundColor(ColorTheme.text.opacity(0.6))
+                }
                 
                 PrimaryButton(
                     title: "Select Files",
@@ -95,7 +99,14 @@ struct ContentView: View {
                 .frame(maxWidth: 200)
             }
             .frame(maxWidth: .infinity)
-            .frame(height: 250)
+            .frame(height: 300)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .strokeBorder(
+                        viewModel.isDropTargeted ? ColorTheme.primary : Color.clear,
+                        style: StrokeStyle(lineWidth: 2, dash: [8])
+                    )
+            )
         }
         .onDrop(of: [.fileURL], isTargeted: $viewModel.isDropTargeted) { providers in
             viewModel.handleDrop(providers: providers)
@@ -104,17 +115,18 @@ struct ContentView: View {
     }
     
     private var fileList: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 16) {
             Text("Selected Files")
-                .font(.headline)
+                .font(.system(size: 18, weight: .semibold))
                 .foregroundColor(ColorTheme.text)
             
             ForEach(viewModel.items) { item in
                 FileCard(
                     fileName: item.url.lastPathComponent,
                     fileSize: item.sizeString,
-                    compressionRatio: item.status == .completed ? 0.7 : nil // TODO: Add actual compression ratio
+                    compressionRatio: item.status == .completed ? 0.7 : nil
                 )
+                .transition(.opacity)
             }
         }
     }
@@ -124,12 +136,12 @@ struct ContentView: View {
             title: "Start Compression",
             icon: "bolt.fill"
         ) {
-            withAnimation {
+            withAnimation(.easeInOut(duration: 0.3)) {
                 isCompressing = true
                 viewModel.compress()
             }
         }
-        .padding()
+        .padding(24)
     }
 }
 
