@@ -21,12 +21,10 @@ class ContentViewModel: ObservableObject {
     }
     
     func handleDrop(providers: [NSItemProvider]) {
-        Task {
+        Task { @MainActor in
             for provider in providers {
                 if let url = try? await provider.loadItem(forTypeIdentifier: UTType.fileURL.identifier) as? URL {
-                    await MainActor.run {
-                        self.items.append(FileItem(url: url))
-                    }
+                    self.items.append(FileItem(url: url))
                 }
             }
         }

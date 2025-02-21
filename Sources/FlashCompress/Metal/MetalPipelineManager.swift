@@ -27,21 +27,17 @@ public final class MetalPipelineManager {
     
     private func setupPipelines() {
         // First try to load from the default library
-        if let defaultLibrary = try? device.makeDefaultLibrary() {
+        if let defaultLibrary = device.makeDefaultLibrary() {
             loadKernels(from: defaultLibrary)
             isLibraryLoaded = true
             return
         }
         
-        // If default library fails, try to load from the bundled metallib
-        if let libraryURL = Bundle.module.url(
-            forResource: "default",
-            withExtension: "metallib"
-        ),
-        let library = try? device.makeLibrary(URL: libraryURL) {
+        // If default library fails, try to load from the bundle
+        if let bundleURL = Bundle.module.url(forResource: "default", withExtension: "metallib"),
+           let library = try? device.makeLibrary(URL: bundleURL) {
             loadKernels(from: library)
             isLibraryLoaded = true
-            return
         }
         
         print("Failed to load Metal library")

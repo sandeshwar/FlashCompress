@@ -86,17 +86,23 @@ kernel void compressBlock(
     // Calculate output position atomically
     uint32_t outputPos = atomic_fetch_add_explicit(
         outputSize,
-        match.isMatch ? 8 : 1,  // 8 bytes for match, 1 for literal
+        match.isMatch ? 5 : 1,  // 1 byte flag + 4 bytes for match data, or 1 byte for literal
         memory_order_relaxed
     );
     
     // Write match or literal
     if (match.isMatch) {
-        // Format: [1-bit flag][15-bit length][16-bit distance]
-        uint32_t encoded = (1u << 31) | ((match.length & 0x7FFF) << 16) | (match.distance & 0xFFFF);
-        device uint32_t* out32 = reinterpret_cast<device uint32_t*>(&output[outputPos]);
-        *out32 = encoded;
+        // Write flag byte (1 for match)
+        output[outputPos] = 1;
+        
+        // Write match data (4 bytes total)
+        // Format: [16-bit distance][16-bit length]
+        device uint16_t* out16 = reinterpret_cast<device uint16_t*>(&output[outputPos + 1]);
+        out16[0] = uint16_t(match.distance & 0xFFFF);
+        out16[1] = uint16_t(match.length & 0xFFFF);
     } else {
-        output[outputPos] = match.literal;
+        // Write flag byte (0 for literal) followed by the literal byte
+        output[outputPos] = 0;
+        output[outputPos + 1] = match.literal;
     }
 }

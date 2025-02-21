@@ -148,7 +148,12 @@ struct ContentView: View {
 extension ContentViewModel {
     var overallProgress: Double {
         guard !items.isEmpty else { return 0 }
-        return Double(completedItems) / Double(items.count)
+        let completedProgress = Double(completedItems) / Double(items.count)
+        if let currentItem = currentProcessingItem {
+            let currentItemProgress = currentItem.progress / Double(items.count)
+            return completedProgress + currentItemProgress
+        }
+        return completedProgress
     }
     
     var completedItems: Int {
