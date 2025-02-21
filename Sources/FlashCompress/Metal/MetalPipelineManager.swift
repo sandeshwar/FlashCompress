@@ -22,34 +22,45 @@ public final class MetalPipelineManager {
         self.device = device
         self.commandQueue = commandQueue
         
-        setupPipelines()
+        do {
+            try setupPipelines()
+        } catch {
+            print("Failed to setup Metal pipelines: \(error)")
+            fatalError("Metal initialization failed")
+        }
     }
     
-    private func setupPipelines() {
+    private func setupPipelines() throws {
         // First try to load from the default library
-        if let defaultLibrary = device.makeDefaultLibrary() {
-            loadKernels(from: defaultLibrary)
+        if let defaultLibrary = try? device.makeDefaultLibrary() {
+            try loadKernels(from: defaultLibrary)
             isLibraryLoaded = true
             return
         }
         
         // If default library fails, try to load from the bundle
-        if let bundleURL = Bundle.module.url(forResource: "default", withExtension: "metallib"),
-           let library = try? device.makeLibrary(URL: bundleURL) {
-            loadKernels(from: library)
-            isLibraryLoaded = true
+        let bundle = Bundle.module
+        guard let libraryURL = bundle.url(forResource: "default", withExtension: "metallib", subdirectory: "Resources/Metal") else {
+            throw MetalError.libraryCreationFailed
         }
         
-        print("Failed to load Metal library")
+        do {
+            let library = try device.makeLibrary(URL: libraryURL)
+            try loadKernels(from: library)
+            isLibraryLoaded = true
+        } catch {
+            print("Failed to load Metal library from bundle: \(error)")
+            throw MetalError.libraryCreationFailed
+        }
     }
     
-    private func loadKernels(from library: MTLLibrary) {
+    private func loadKernels(from library: MTLLibrary) throws {
         let kernelNames = ["compressBlock"]
         
         for name in kernelNames {
             guard let function = library.makeFunction(name: name) else {
                 print("Failed to create function for kernel: \(name)")
-                continue
+                throw MetalError.functionCreationFailed
             }
             
             do {
@@ -57,6 +68,7 @@ public final class MetalPipelineManager {
                 computePipelineStates[name] = pipelineState
             } catch {
                 print("Failed to create pipeline state for kernel: \(name), error: \(error)")
+                throw MetalError.pipelineCreationFailed
             }
         }
     }
