@@ -16,7 +16,7 @@ let package = Package(
             dependencies: [],
             exclude: ["Metal/Kernels.metal"],
             resources: [
-                .copy("Resources/Metal")
+                .process("Resources")
             ],
             swiftSettings: [
                 .define("METAL_ENABLED")

@@ -31,46 +31,81 @@ public final class MetalPipelineManager {
     }
     
     private func setupPipelines() throws {
+        print("Setting up Metal pipelines...")
+        
         // First try to load from the default library
         if let defaultLibrary = try? device.makeDefaultLibrary() {
+            print("Successfully loaded default Metal library")
             try loadKernels(from: defaultLibrary)
             isLibraryLoaded = true
             return
         }
+        print("Failed to load default Metal library, trying bundle...")
         
-        // If default library fails, try to load from the bundle
-        let bundle = Bundle.module
-        guard let libraryURL = bundle.url(forResource: "default", withExtension: "metallib", subdirectory: "Resources/Metal") else {
-            throw MetalError.libraryCreationFailed
+        // Try different bundle approaches
+        let possibleBundles = [
+            Bundle.main,
+            Bundle.module,
+            Bundle(for: type(of: self))
+        ]
+        
+        for (index, bundle) in possibleBundles.enumerated() {
+            print("Trying bundle \(index)...")
+            
+            // Try without subdirectory first
+            if let libraryURL = bundle.url(forResource: "default", withExtension: "metallib") {
+                print("Found metallib at: \(libraryURL)")
+                do {
+                    let library = try device.makeLibrary(URL: libraryURL)
+                    try loadKernels(from: library)
+                    isLibraryLoaded = true
+                    return
+                } catch {
+                    print("Failed to load library from URL \(libraryURL): \(error)")
+                }
+            }
+            
+            // Try with Resources/Metal subdirectory
+            if let libraryURL = bundle.url(forResource: "default", withExtension: "metallib", subdirectory: "Resources/Metal") {
+                print("Found metallib in Resources/Metal at: \(libraryURL)")
+                do {
+                    let library = try device.makeLibrary(URL: libraryURL)
+                    try loadKernels(from: library)
+                    isLibraryLoaded = true
+                    return
+                } catch {
+                    print("Failed to load library from Resources/Metal URL \(libraryURL): \(error)")
+                }
+            }
         }
         
-        do {
-            let library = try device.makeLibrary(URL: libraryURL)
-            try loadKernels(from: library)
-            isLibraryLoaded = true
-        } catch {
-            print("Failed to load Metal library from bundle: \(error)")
-            throw MetalError.libraryCreationFailed
-        }
+        // If we get here, we failed to load the library
+        print("Failed to find Metal library in any location")
+        throw MetalError.libraryCreationFailed
     }
     
     private func loadKernels(from library: MTLLibrary) throws {
+        print("Loading kernels from library...")
         let kernelNames = ["compressBlock"]
         
         for name in kernelNames {
+            print("Creating function for kernel: \(name)")
             guard let function = library.makeFunction(name: name) else {
                 print("Failed to create function for kernel: \(name)")
                 throw MetalError.functionCreationFailed
             }
             
             do {
+                print("Creating pipeline state for kernel: \(name)")
                 let pipelineState = try device.makeComputePipelineState(function: function)
                 computePipelineStates[name] = pipelineState
+                print("Successfully created pipeline state for kernel: \(name)")
             } catch {
                 print("Failed to create pipeline state for kernel: \(name), error: \(error)")
                 throw MetalError.pipelineCreationFailed
             }
         }
+        print("Successfully loaded all kernels")
     }
     
     /// Creates a Metal buffer from data

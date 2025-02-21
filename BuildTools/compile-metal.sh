@@ -15,22 +15,43 @@ fi
 # Create output directory if it doesn't exist
 mkdir -p "$OUTPUT_DIR"
 
-echo "Compiling Metal shader..."
+echo "Metal source file: $METAL_SOURCE"
+echo "Output directory: $OUTPUT_DIR"
+echo "Temporary air file: $TEMP_AIR"
 
-# Compile Metal shader to intermediate .air file
-if ! xcrun -sdk macosx metal -c "$METAL_SOURCE" -o "$TEMP_AIR"; then
+echo "Compiling Metal shader with verbose output..."
+
+# Compile Metal shader to intermediate .air file with verbose output
+if ! xcrun -sdk macosx metal -v -c "$METAL_SOURCE" -o "$TEMP_AIR"; then
     echo "Error: Failed to compile Metal shader"
     exit 1
 fi
 
-echo "Creating metallib..."
+echo "Verifying .air file..."
+if [ ! -f "$TEMP_AIR" ]; then
+    echo "Error: .air file was not created"
+    exit 1
+fi
 
-# Create metallib from .air file
-if ! xcrun -sdk macosx metallib "$TEMP_AIR" -o "$OUTPUT_DIR/default.metallib"; then
+echo "Creating metallib with verbose output..."
+
+# Create metallib from .air file with verbose output
+if ! xcrun -sdk macosx metallib -v "$TEMP_AIR" -o "$OUTPUT_DIR/default.metallib"; then
     echo "Error: Failed to create metallib"
     rm -f "$TEMP_AIR"
     exit 1
 fi
+
+echo "Verifying metallib file..."
+if [ ! -f "$OUTPUT_DIR/default.metallib" ]; then
+    echo "Error: metallib file was not created"
+    rm -f "$TEMP_AIR"
+    exit 1
+fi
+
+# Get file info
+echo "Metallib file info:"
+ls -l "$OUTPUT_DIR/default.metallib"
 
 # Clean up temporary file
 rm -f "$TEMP_AIR"
