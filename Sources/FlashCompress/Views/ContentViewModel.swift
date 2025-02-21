@@ -36,8 +36,8 @@ class ContentViewModel: ObservableObject {
         guard !items.isEmpty else { return }
         
         let panel = NSSavePanel()
-        panel.allowedContentTypes = [UTType.archive]
-        panel.nameFieldStringValue = "Compressed.flashzip"
+        panel.allowedContentTypes = [.zip]
+        panel.nameFieldStringValue = "Compressed.zip"
         
         guard panel.runModal() == .OK,
               let destinationURL = panel.url else { return }
@@ -50,23 +50,36 @@ class ContentViewModel: ObservableObject {
         }
         
         // Compress each item
-        for (index, item) in items.enumerated() {
-            compressionManager.compressFile(at: item.url, to: destinationURL) { progress in
-                Task { @MainActor in
-                    // Update progress for this item
-                    self.items[index].progress = progress
-                }
-            } completion: { result in
-                Task { @MainActor in
-                    // Mark item as complete
-                    self.items[index].isProcessing = false
-                    
-                    switch result {
-                    case .success:
+        Task {
+            for (index, item) in items.enumerated() {
+                do {
+                    try await compressionManager.compressFile(at: item.url, to: destinationURL) { progress in
+                        Task { @MainActor in
+                            self.items[index].progress = progress
+                        }
+                    }
+                    await MainActor.run {
+                        self.items[index].isProcessing = false
                         self.items[index].status = .completed
-                    case .failure(let error):
+                    }
+                } catch {
+                    await MainActor.run {
+                        self.items[index].isProcessing = false
                         self.items[index].status = .failed(error)
                     }
+                }
+            }
+        }
+    }
+    
+    func cancelCompression() {
+        Task {
+            // TODO: Implement actual cancellation in CompressionManager
+            await MainActor.run {
+                items = items.map { item in
+                    var newItem = item
+                    newItem.isProcessing = false
+                    return newItem
                 }
             }
         }

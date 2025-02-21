@@ -8,6 +8,7 @@ public final class MetalPipelineManager {
     private let device: MTLDevice
     private let commandQueue: MTLCommandQueue
     private var computePipelineStates: [String: MTLComputePipelineState] = [:]
+    private var isLibraryLoaded = false
     
     private init() {
         guard let device = MTLCreateSystemDefaultDevice() else {
@@ -26,19 +27,20 @@ public final class MetalPipelineManager {
     
     private func setupPipelines() {
         // First try to load from the default library
-        if let defaultLibrary = device.makeDefaultLibrary() {
+        if let defaultLibrary = try? device.makeDefaultLibrary() {
             loadKernels(from: defaultLibrary)
+            isLibraryLoaded = true
             return
         }
         
         // If default library fails, try to load from the bundled metallib
-        if let libraryURL = Bundle.main.url(
+        if let libraryURL = Bundle.module.url(
             forResource: "default",
-            withExtension: "metallib",
-            subdirectory: "Resources/Metal"
+            withExtension: "metallib"
         ),
         let library = try? device.makeLibrary(URL: libraryURL) {
             loadKernels(from: library)
+            isLibraryLoaded = true
             return
         }
         
@@ -65,6 +67,7 @@ public final class MetalPipelineManager {
     
     /// Creates a Metal buffer from data
     public func makeBuffer<T>(_ data: [T], options: MTLResourceOptions = []) -> MTLBuffer? {
+        guard isLibraryLoaded else { return nil }
         return data.withUnsafeBytes { ptr in
             device.makeBuffer(bytes: ptr.baseAddress!, length: ptr.count, options: options)
         }
@@ -72,6 +75,7 @@ public final class MetalPipelineManager {
     
     /// Creates an empty Metal buffer
     public func makeBuffer(length: Int, options: MTLResourceOptions = []) -> MTLBuffer? {
+        guard isLibraryLoaded else { return nil }
         return device.makeBuffer(length: length, options: options)
     }
     
@@ -82,6 +86,11 @@ public final class MetalPipelineManager {
         threadCount: Int,
         completion: @escaping (Error?) -> Void
     ) {
+        guard isLibraryLoaded else {
+            completion(MetalError.libraryNotLoaded)
+            return
+        }
+        
         guard let commandBuffer = commandQueue.makeCommandBuffer(),
               let computeEncoder = commandBuffer.makeComputeCommandEncoder(),
               let pipelineState = computePipelineStates[kernel] else {
@@ -114,4 +123,18 @@ public final class MetalPipelineManager {
         commandBuffer.commit()
     }
 }
+//
+//enum MetalError: LocalizedError {
+//    case commandCreationFailed
+//    case libraryNotLoaded
+//    
+//    var errorDescription: String? {
+//        switch self {
+//        case .commandCreationFailed:
+//            return "Failed to create Metal command buffer or encoder"
+//        case .libraryNotLoaded:
+//            return "Metal library not loaded"
+//        }
+//    }
+//}
 

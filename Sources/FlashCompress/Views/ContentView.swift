@@ -146,13 +146,4 @@ extension ContentViewModel {
     var currentProcessingItem: FileItem? {
         items.first { $0.isProcessing }
     }
-    
-    func cancelCompression() {
-        // TODO: Implement compression cancellation
-        items = items.map { item in
-            var newItem = item
-            newItem.isProcessing = false
-            return newItem
-        }
-    }
 } 

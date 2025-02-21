@@ -8,6 +8,7 @@ public enum MetalError: LocalizedError {
     case pipelineCreationFailed
     case commandCreationFailed
     case bufferCreationFailed
+    case libraryNotLoaded
     
     public var errorDescription: String? {
         switch self {
@@ -23,6 +24,8 @@ public enum MetalError: LocalizedError {
             return "Failed to create command buffer or encoder"
         case .bufferCreationFailed:
             return "Failed to create Metal buffer"
+        case .libraryNotLoaded:
+            return "Metal library not loaded"
         }
     }
 }

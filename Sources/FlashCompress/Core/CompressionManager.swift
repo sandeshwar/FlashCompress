@@ -24,12 +24,10 @@ public final class CompressionManager {
     func compressFile(
         at sourceURL: URL,
         to destinationURL: URL,
-        progress: @escaping (Double) -> Void,
-        completion: @escaping (Result<URL, Error>) -> Void
-    ) {
+        progress: @escaping (Double) -> Void
+    ) async throws {
         guard let inputStream = InputStream(url: sourceURL) else {
-            completion(.failure(CompressionError.inputStreamCreationFailed))
-            return
+            throw CompressionError.inputStreamCreationFailed
         }
         
         // Create output stream and ensure the directory exists
@@ -37,13 +35,11 @@ public final class CompressionManager {
         do {
             try fileManager.createDirectory(at: directory, withIntermediateDirectories: true)
         } catch {
-            completion(.failure(CompressionError.outputStreamCreationFailed))
-            return
+            throw CompressionError.outputStreamCreationFailed
         }
         
         guard let outputStream = OutputStream(url: destinationURL, append: false) else {
-            completion(.failure(CompressionError.outputStreamCreationFailed))
-            return
+            throw CompressionError.outputStreamCreationFailed
         }
         
         inputStream.open()
@@ -69,69 +65,50 @@ public final class CompressionManager {
         )
         
         guard header.write(to: outputStream) else {
-            completion(.failure(CompressionError.writeError))
-            return
+            throw CompressionError.writeError
         }
         
         // Process file in chunks
-        func processNextChunk() {
+        while true {
             var buffer = [UInt8](repeating: 0, count: chunkSize)
             let bytesRead = inputStream.read(&buffer, maxLength: chunkSize)
             
             if bytesRead < 0 {
-                completion(.failure(CompressionError.readError))
-                return
+                throw CompressionError.readError
             }
             
             if bytesRead == 0 {
-                completion(.success(destinationURL))
-                return
+                break
             }
             
             let chunk = Array(buffer.prefix(bytesRead))
-            compressChunk(chunk) { result in
-                switch result {
-                case .success(let compressedData):
-                    // Write compressed size first (4 bytes)
-                    var size = UInt32(compressedData.count).littleEndian
-                    let sizeData = withUnsafeBytes(of: &size) { Array($0) }
-                    
-                    guard outputStream.write(sizeData, maxLength: sizeData.count) == sizeData.count else {
-                        completion(.failure(CompressionError.writeError))
-                        return
-                    }
-                    
-                    let written = outputStream.write(compressedData, maxLength: compressedData.count)
-                    if written < 0 {
-                        completion(.failure(CompressionError.writeError))
-                        return
-                    }
-                    
-                    totalBytesProcessed += bytesRead
-                    progress(Double(totalBytesProcessed) / Double(fileSize))
-                    
-                    processNextChunk()
-                    
-                case .failure(let error):
-                    completion(.failure(error))
-                }
+            let compressedData = try await compressChunk(chunk)
+            
+            // Write compressed size first (4 bytes)
+            var size = UInt32(compressedData.count).littleEndian
+            let sizeData = withUnsafeBytes(of: &size) { Array($0) }
+            
+            guard outputStream.write(sizeData, maxLength: sizeData.count) == sizeData.count else {
+                throw CompressionError.writeError
             }
+            
+            let written = outputStream.write(compressedData, maxLength: compressedData.count)
+            if written < 0 {
+                throw CompressionError.writeError
+            }
+            
+            totalBytesProcessed += bytesRead
+            progress(Double(totalBytesProcessed) / Double(fileSize))
         }
-        
-        processNextChunk()
     }
     
     /// Compresses a single chunk of data using Metal
-    private func compressChunk(
-        _ data: [UInt8],
-        completion: @escaping (Result<[UInt8], Error>) -> Void
-    ) {
+    private func compressChunk(_ data: [UInt8]) async throws -> [UInt8] {
         // Create aligned buffers
         guard let inputBuffer = metalPipeline.makeBuffer(data),
               let outputBuffer = metalPipeline.makeBuffer(length: data.count * 2 + 256), // Extra space for metadata
               let outputSizeBuffer = metalPipeline.makeBuffer(length: MemoryLayout<UInt32>.stride) else {
-            completion(.failure(CompressionError.bufferCreationFailed))
-            return
+            throw CompressionError.bufferCreationFailed
         }
         
         // Initialize output size to 0 with proper alignment
@@ -148,39 +125,40 @@ public final class CompressionManager {
         
         // Create aligned params buffer
         guard let paramsBuffer = metalPipeline.makeBuffer(length: MemoryLayout<CompressionParams>.stride) else {
-            completion(.failure(CompressionError.bufferCreationFailed))
-            return
+            throw CompressionError.bufferCreationFailed
         }
         
         // Copy params with proper alignment
         paramsBuffer.contents().bindMemory(to: CompressionParams.self, capacity: 1).pointee = params
         
-        metalPipeline.execute(
-            kernel: "compressBlock",
-            buffers: [inputBuffer, outputBuffer, paramsBuffer, outputSizeBuffer],
-            threadCount: data.count
-        ) { error in
-            // Clean up buffers
-            defer {
-                inputBuffer.setPurgeableState(.empty)
-                outputBuffer.setPurgeableState(.empty)
-                paramsBuffer.setPurgeableState(.empty)
-                outputSizeBuffer.setPurgeableState(.empty)
+        return try await withCheckedThrowingContinuation { continuation in
+            metalPipeline.execute(
+                kernel: "compressBlock",
+                buffers: [inputBuffer, outputBuffer, paramsBuffer, outputSizeBuffer],
+                threadCount: data.count
+            ) { error in
+                // Clean up buffers
+                defer {
+                    inputBuffer.setPurgeableState(.empty)
+                    outputBuffer.setPurgeableState(.empty)
+                    paramsBuffer.setPurgeableState(.empty)
+                    outputSizeBuffer.setPurgeableState(.empty)
+                }
+                
+                if let error = error {
+                    continuation.resume(throwing: error)
+                    return
+                }
+                
+                // Read the compressed size
+                let compressedSize = outputSizePtr.pointee
+                
+                // Read the compressed data
+                let outputPtr = outputBuffer.contents().bindMemory(to: UInt8.self, capacity: Int(compressedSize))
+                let compressedData = Array(UnsafeBufferPointer(start: outputPtr, count: Int(compressedSize)))
+                
+                continuation.resume(returning: compressedData)
             }
-            
-            if let error = error {
-                completion(.failure(error))
-                return
-            }
-            
-            // Read the compressed size
-            let compressedSize = outputSizePtr.pointee
-            
-            // Read the compressed data
-            let outputPtr = outputBuffer.contents().bindMemory(to: UInt8.self, capacity: Int(compressedSize))
-            let compressedData = Array(UnsafeBufferPointer(start: outputPtr, count: Int(compressedSize)))
-            
-            completion(.success(compressedData))
         }
     }
 }
