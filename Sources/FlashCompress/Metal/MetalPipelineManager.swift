@@ -123,18 +123,4 @@ public final class MetalPipelineManager {
         commandBuffer.commit()
     }
 }
-//
-//enum MetalError: LocalizedError {
-//    case commandCreationFailed
-//    case libraryNotLoaded
-//    
-//    var errorDescription: String? {
-//        switch self {
-//        case .commandCreationFailed:
-//            return "Failed to create Metal command buffer or encoder"
-//        case .libraryNotLoaded:
-//            return "Metal library not loaded"
-//        }
-//    }
-//}
 
