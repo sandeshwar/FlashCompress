@@ -46,14 +46,20 @@ struct ContentView: View {
     
     private var header: some View {
         HStack {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Flash Compress")
-                    .font(.system(size: 28, weight: .bold))
-                    .foregroundColor(ColorTheme.text)
+            HStack(spacing: 12) {
+                Image(systemName: "bolt.square.fill")
+                    .font(.system(size: 32))
+                    .foregroundColor(ColorTheme.primary)
                 
-                Text("Blazing fast compression for your files")
-                    .font(.system(size: 16))
-                    .foregroundColor(ColorTheme.text.opacity(0.6))
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("Flash Compress")
+                        .font(.system(size: 32, weight: .heavy, design: .rounded))
+                        .foregroundColor(ColorTheme.text)
+                    
+                    Text("Blazing fast compression for your files")
+                        .font(.system(size: 16, design: .rounded))
+                        .foregroundColor(ColorTheme.text.opacity(0.6))
+                }
             }
             
             Spacer()
