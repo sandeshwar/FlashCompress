@@ -1,7 +1,8 @@
 import Foundation
+import Metal
 
 /// Manages the compression and decompression operations
-final class CompressionManager {
+public final class CompressionManager {
     static let shared = CompressionManager()
     
     private let metalPipeline: MetalPipelineManager
@@ -159,6 +160,14 @@ final class CompressionManager {
             buffers: [inputBuffer, outputBuffer, paramsBuffer, outputSizeBuffer],
             threadCount: data.count
         ) { error in
+            // Clean up buffers
+            defer {
+                inputBuffer.setPurgeableState(.empty)
+                outputBuffer.setPurgeableState(.empty)
+                paramsBuffer.setPurgeableState(.empty)
+                outputSizeBuffer.setPurgeableState(.empty)
+            }
+            
             if let error = error {
                 completion(.failure(error))
                 return

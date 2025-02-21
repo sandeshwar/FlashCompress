@@ -13,12 +13,13 @@ let package = Package(
     targets: [
         .executableTarget(
             name: "FlashCompress",
-            exclude: [
-                "Metal/Kernels.air"
-            ],
+            dependencies: [],
+            exclude: ["Metal/Kernels.metal"],
             resources: [
-                .process("Resources"),
-                .process("Metal", localization: nil)
+                .copy("Resources/Metal")
+            ],
+            swiftSettings: [
+                .define("METAL_ENABLED")
             ]
         ),
         .testTarget(
